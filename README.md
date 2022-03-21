@@ -15,4 +15,5 @@ Each site file is prefixed with an ISO 639-3 code denoting its language.
 
 # Code release
 
-We are in the process of preparing software and documentation for the corpus. (Coming soon!).
+We are in the process of preparing software and documentation for the corpus.
+Check back soon!
