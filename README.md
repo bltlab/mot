@@ -29,7 +29,7 @@ we used to scrape and extract text from Voice of America.
 ## Setup
 We recommend using a conda environment when working with the codebase.
 Use python 3.8 or higher.
-Install dependencies with `pip install -r requiremnts.txt`. 
+Install dependencies with `pip install -r requirements.txt`. 
 
 You will need to install mongodb to store scraped documents.
 [mongo installation instructions](https://www.mongodb.com/docs/v4.0/tutorial/install-mongodb-on-os-x/)
