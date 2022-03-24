@@ -21,6 +21,40 @@ You can get the latest version of our data by
 The data is released in one gzipped tar file per site in the source data.
 Each site file is prefixed with an ISO 639-3 code denoting its language.
 
+### Sentence Segmentation and Tokenization
+Each json document has `paragraphs` and `n_paragraphs` with the text split based on paragraph
+splits in the original html.
+For the languages where we provide tokenization and segmentation,
+the fields `sentences`, `n_sentences`, `tokens`, and `n_tokens` are also provided.
+
+
+We are in the process of expanding the languages for which we provide sentence segmentation.
+We currently support:
+amh,
+cmn,
+ell,
+eng,
+fas,
+fra,
+hye,
+ind,
+khm,
+kor,
+lao,
+por,
+pus,
+rus,
+spa,
+srp,
+tha,
+tir,
+tur,
+ukr,
+urd,
+vie,
+yue
+.
+Note just for Pashto we provide sentence splits but not yet tokenization.
 
 # Code Release
 This code release includes all the code 
@@ -28,11 +62,11 @@ we used to scrape and extract text from Voice of America.
 
 ## Setup
 We recommend using a conda environment when working with the codebase.
-Use python 3.8 or higher.
+Use Python 3.8 or higher.
 Install dependencies with `pip install -r requirements.txt`. 
 
-You will need to install mongodb to store scraped documents.
-[mongo installation instructions](https://www.mongodb.com/docs/v4.0/tutorial/install-mongodb-on-os-x/)
+You will need to install MongoDB to store scraped documents.
+[mongo installation instructions](https://www.mongodb.com/docs/v4.0/tutorial/install-mongodb-on-os-x/).
 To start the database: `mongod --dbpath voa-mongodb/ --wiredTigerCacheSizeGB 16 --port 27200`
 We specify a specfic path to store the database and a specific port and limit the cache size.
 
@@ -42,7 +76,7 @@ To dump or restore the DB from a past archive:
 Use `--bypassDocumentValidation` flag if the backedup db doesn't have all documents passing validation.
 
 ## Running Scraping and Extraction
-Run downloadsitemaps to get fresh sitemaps of VOA. 
+Run downloadsitemaps.py to get fresh sitemaps of VOA.
 This requires the `voa-domain.tsv` file with the different VOA domains.
 `python extraction/downloadsitemaps.py voa-domains.tsv sitemaps-10.27.21 filemap-10.27.21.tsv`
 (Sometimes this fails with 503 error, just run again if needed)
