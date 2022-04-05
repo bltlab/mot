@@ -109,7 +109,11 @@ class LaoTokenizer(BaseTokenizer):
         self.language = "lao"
 
     def tokenize(self, text: str) -> List[str]:
-        return laonlp.tokenize.word_tokenize(text)
+        return [
+            token.strip()
+            for token in laonlp.tokenize.word_tokenize(text)
+            if token.strip()
+        ]
 
 
 class RussianTokenizer(BaseTokenizer):
@@ -157,7 +161,11 @@ class ThaiTokenizer(BaseTokenizer):
         self.language = "tha"
 
     def tokenize(self, text: str) -> List[str]:
-        return pythainlp.tokenize.word_tokenize(text)
+        return [
+            token.strip()
+            for token in pythainlp.tokenize.word_tokenize(text)
+            if token.strip()
+        ]
 
 
 class GeezTokenizer(BaseTokenizer):

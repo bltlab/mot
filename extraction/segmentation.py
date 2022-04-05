@@ -111,7 +111,9 @@ class LaoSegmenter(Segmenter):
         self.language = "lao"
 
     def segment(self, text: str) -> List[str]:
-        return laonlp.tokenize.sent_tokenize(text)
+        return [
+            sent.strip() for sent in laonlp.tokenize.sent_tokenize(text) if sent.strip()
+        ]
 
 
 class RussianSegmenter(Segmenter):
@@ -157,7 +159,11 @@ class ThaiSegmenter(Segmenter):
         self.language = "tha"
 
     def segment(self, thai_str: str) -> List[str]:
-        return pythainlp.tokenize.sent_tokenize(thai_str)
+        return [
+            sent.strip()
+            for sent in pythainlp.tokenize.sent_tokenize(thai_str)
+            if sent.strip()
+        ]
 
 
 class GeezSegmenter(Segmenter):
