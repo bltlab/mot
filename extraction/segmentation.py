@@ -1,3 +1,4 @@
+import re
 from abc import ABC, abstractmethod
 from io import StringIO
 from typing import Sequence, List, Optional
@@ -13,6 +14,8 @@ from attr import attrs
 from ersatz.candidates import MultilingualPunctuation, Split, PunctuationSpace
 from ersatz.split import EvalModel
 from ersatz.utils import get_model_path
+
+from extraction.utils import SPACE_CHARS_STR
 
 SEGMENTABLE_LANGUAGES = {
     "amh",
@@ -105,15 +108,13 @@ class LaoSegmenter(Segmenter):
     """
     Lao Segmenter using LaoNLP
     """
-
     def __init__(self):
         super().__init__()
         self.language = "lao"
 
     def segment(self, text: str) -> List[str]:
-        return [
-            sent.strip() for sent in laonlp.tokenize.sent_tokenize(text) if sent.strip()
-        ]
+        text = re.sub(rf"[{SPACE_CHARS_STR}]", "", text)
+        return [sent.strip() for sent in laonlp.tokenize.sent_tokenize(text) if sent.strip()]
 
 
 class RussianSegmenter(Segmenter):
@@ -159,11 +160,8 @@ class ThaiSegmenter(Segmenter):
         self.language = "tha"
 
     def segment(self, thai_str: str) -> List[str]:
-        return [
-            sent.strip()
-            for sent in pythainlp.tokenize.sent_tokenize(thai_str)
-            if sent.strip()
-        ]
+        thai_str = re.sub(rf"[{SPACE_CHARS_STR}]", "", thai_str)
+        return [sent.strip() for sent in pythainlp.tokenize.sent_tokenize(thai_str) if sent.strip()]
 
 
 class GeezSegmenter(Segmenter):

@@ -17,6 +17,7 @@ from spacy.lang.zh import Chinese
 from spacy.tokenizer import Tokenizer
 
 from extraction.segmentation import StanzaSegmenter
+from extraction.utils import SPACE_CHARS
 
 TOKENIZABLE_LANGUAGES = {
     "amh",
@@ -109,11 +110,8 @@ class LaoTokenizer(BaseTokenizer):
         self.language = "lao"
 
     def tokenize(self, text: str) -> List[str]:
-        return [
-            token.strip()
-            for token in laonlp.tokenize.word_tokenize(text)
-            if token.strip()
-        ]
+        # Strips
+        return [token.strip().strip("".join(SPACE_CHARS)) for token in laonlp.tokenize.word_tokenize(text) if token.strip()]
 
 
 class RussianTokenizer(BaseTokenizer):
@@ -161,11 +159,7 @@ class ThaiTokenizer(BaseTokenizer):
         self.language = "tha"
 
     def tokenize(self, text: str) -> List[str]:
-        return [
-            token.strip()
-            for token in pythainlp.tokenize.word_tokenize(text)
-            if token.strip()
-        ]
+        return [token.strip().strip("".join(SPACE_CHARS)) for token in pythainlp.tokenize.word_tokenize(text) if token.strip()]
 
 
 class GeezTokenizer(BaseTokenizer):

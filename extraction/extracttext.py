@@ -373,6 +373,11 @@ def extract_document(
             ]
         else:
             sentences = None
+
+        # Filter out empty sentences
+        if sentences:
+            sentences = [sent for sent in sentences if sent]
+
         if iso in TOKENIZABLE_LANGUAGES and (
             tokenizer is None or tokenizer.language != iso
         ):
