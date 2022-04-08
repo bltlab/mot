@@ -46,6 +46,9 @@ SEGMENTABLE_LANGUAGES = {
 }
 
 
+SPACE_CHAR_REGEX = re.compile(rf"[{SPACE_CHARS_STR}]")
+
+
 class Segmenter(ABC):
     def __init__(self):
         self.language = "xx"
@@ -108,13 +111,16 @@ class LaoSegmenter(Segmenter):
     """
     Lao Segmenter using LaoNLP
     """
+
     def __init__(self):
         super().__init__()
         self.language = "lao"
 
     def segment(self, text: str) -> List[str]:
-        text = re.sub(rf"[{SPACE_CHARS_STR}]", "", text)
-        return [sent.strip() for sent in laonlp.tokenize.sent_tokenize(text) if sent.strip()]
+        text = SPACE_CHAR_REGEX.sub("", text)
+        return [
+            sent.strip() for sent in laonlp.tokenize.sent_tokenize(text) if sent.strip()
+        ]
 
 
 class RussianSegmenter(Segmenter):
@@ -160,8 +166,12 @@ class ThaiSegmenter(Segmenter):
         self.language = "tha"
 
     def segment(self, thai_str: str) -> List[str]:
-        thai_str = re.sub(rf"[{SPACE_CHARS_STR}]", "", thai_str)
-        return [sent.strip() for sent in pythainlp.tokenize.sent_tokenize(thai_str) if sent.strip()]
+        thai_str = SPACE_CHAR_REGEX.sub("", thai_str)
+        return [
+            sent.strip()
+            for sent in pythainlp.tokenize.sent_tokenize(thai_str)
+            if sent.strip()
+        ]
 
 
 class GeezSegmenter(Segmenter):
