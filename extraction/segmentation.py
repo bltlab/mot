@@ -208,7 +208,8 @@ class ErsatzSegmenter(Segmenter):
         self.ersatz_model: ErsatzModel = ErsatzSegmenter.setup_ersatz(iso, cuda_id)
 
     def segment(self, text: str) -> List[str]:
-        return self.run_ersatz([text])
+        text = SPACE_CHAR_REGEX.sub("", text)
+        return [sent.strip() for sent in self.run_ersatz([text]) if sent.strip()]
 
     def run_ersatz(self, texts: Sequence[str]) -> List[str]:
         output_file = StringIO()

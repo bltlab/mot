@@ -96,9 +96,11 @@ class KhmerTokenizer(BaseTokenizer):
         self.khmer_tokenize = load_khmernltk()
 
     def tokenize(self, text: str) -> List[str]:
-        # This tokenizer doesn't seem bad but is capable of producing whitespace tokens
-        # And that's not good, so needs filtered out, ideally replace this one eventually
-        return [token for token in self.khmer_tokenize(text) if token.strip()]
+        return [
+            token.strip(SPACE_CHARS_STR)
+            for token in self.khmer_tokenize(text)
+            if token.strip(SPACE_CHARS_STR)
+        ]
 
 
 class LaoTokenizer(BaseTokenizer):
@@ -267,6 +269,8 @@ def setup_tokenizer(iso: str = "xx") -> BaseTokenizer:
         return StanzaTokenizer(iso)
     elif iso == "mya":
         return StanzaTokenizer(iso)
+    elif iso == "khm":
+        return KhmerTokenizer()
     else:
         return SpacyTokenizer()
 
