@@ -8,7 +8,7 @@ import json
 import os
 from argparse import ArgumentParser
 
-from extraction.extracttext import Document
+from extraction.document import Document
 
 
 def plaintextify():
