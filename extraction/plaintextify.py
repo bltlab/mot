@@ -32,6 +32,10 @@ def plaintextify():
             continue
 
         insubdir = os.path.join(args.inputdir, subdir)
+        # Skip non-directories, like .DS_Store files
+        if not os.path.isdir(insubdir):
+            continue
+
         raw_sub = os.path.join(raw_outdir, subdir)
         sents_sub = os.path.join(sents_outdir, subdir)
         if not args.tokenized_only:
@@ -40,8 +44,9 @@ def plaintextify():
             os.makedirs(sents_sub, exist_ok=True)
         files = os.listdir(insubdir)
         for f in files:
-            # This is not actually a document, just a list of urls where we didn't extract anything
-            if f == "empty_output.txt":
+            # This ignores empty_output.txt, which is just a list of urls where we didn't
+            # extract anything, but it also covers OS files like .DS_Store
+            if not f.endswith(".json"):
                 continue
             filepath = os.path.join(insubdir, f)
             with open(filepath, "r", encoding="utf8") as infile:
