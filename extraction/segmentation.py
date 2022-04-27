@@ -139,7 +139,7 @@ class RussianSegmenter(Segmenter):
 
 class PersianSegmenter(Segmenter):
     """
-    PyThaiNLP uses a CRF trained on TED dataset as the default segmentation approach.
+    Persian segmenter using Parsivar. Note: Also does normalization..
     """
 
     def __init__(self, lang: str):
