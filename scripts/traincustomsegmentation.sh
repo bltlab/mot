@@ -19,7 +19,7 @@ INPUT_DEV_FILE_PATHS=$LANG_DIR/dev.txt
 MODELS_PATH=$LANG_DIR/models
 mkdir -p $MODELS_PATH
 LOGDIR=$LANG_DIR/logs
-mkidr -p $LOGDIR
+mkdir -p $LOGDIR
 
 python $ERSATZ_DIR/dataset.py \
     --sentencepiece_path $SPM_PATH \
