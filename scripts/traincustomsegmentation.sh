@@ -26,7 +26,7 @@ python $ERSATZ_DIR/dataset.py \
     --left-size $LEFT_SIZE \
     --right-size $RIGHT_SIZE \
     --output_path $TRAIN_OUTPUT_PATH \
-    $INPUT_TRAIN_FILE_PATH
+    --input_paths $INPUT_TRAIN_FILE_PATH
 
 shuf $TRAIN_OUTPUT_PATH > $SHUFFLED_TRAIN_OUTPUT_PATH
 
@@ -35,7 +35,7 @@ python $ERSATZ_DIR/dataset.py \
     --left-size $LEFT_SIZE \
     --right-size $RIGHT_SIZE \
     --output_path $VALIDATION_OUTPUT_PATH \
-    $INPUT_DEV_FILE_PATHS
+    --input_paths $INPUT_DEV_FILE_PATHS
 
 python $ERSATZ_DIR/trainer.py \
   --sentencepiece_path=$SPM_PATH \
