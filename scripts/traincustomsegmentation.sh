@@ -5,8 +5,9 @@
 
 LANG_DIR=$1
 ERSATZ_DIR=$2
+LANG=$(basename $LANG_DIR)
 
-SPM_PATH=$LANG_DIR/$LANG_DIR.ersatz.model
+SPM_PATH=$LANG_DIR/$LANG.ersatz.model
 LEFT_SIZE=15
 RIGHT_SIZE=5
 TRAIN_OUTPUT_PATH=$LANG_DIR/ersatz-train.txt
