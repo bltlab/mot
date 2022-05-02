@@ -44,7 +44,7 @@ python $ERSATZ_DIR/trainer.py \
   --left_size=$LEFT_SIZE \
   --right_size=$RIGHT_SIZE \
   --output_path=$MODELS_PATH \
-  --max-epochs=300 \
+  --max-epochs=100 \
   --tb_dir=$LOGDIR
 #  --eos_weight=$eos_weight \
 
