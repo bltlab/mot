@@ -96,7 +96,7 @@ def run() -> None:
             else:
                 with Pool(args.n_workers) as pool:
                     for n_chars in pool.imap_unordered(
-                        average_chars, read_articles(file), chunksize=100
+                        average_chars, read_articles(os.path.join(root, file)), chunksize=100
                     ):
                         counter.count(language, n_chars)
 
