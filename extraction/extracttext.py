@@ -5,6 +5,7 @@ Script to extract text from json dumped scrapes from scrapes mongodb.
 import os
 import json
 import urllib.parse
+from datetime import datetime
 
 import click
 from torch import multiprocessing
@@ -277,6 +278,30 @@ def write_removed_paragraphs(
             print(f"{num}\t{prob}\t{prop}\t{clean_paragraph}", file=outfile)
 
 
+def get_publication_date_from_utag(utag_data: Dict) -> Optional[str]:
+    """
+    Returns a datetime in format "2016-03-15T00:00:00"
+    """
+    # pub_year, pub_month, pub_day, pub_hour,  pub_min
+    pub_year = utag_data.get("pub_year")
+    pub_month = utag_data.get("pub_month")
+    pub_day = utag_data.get("pub_day")
+    pub_hour = utag_data.get("pub_hour")
+    pub_min = utag_data.get("pub_minute")
+    pub_date = None
+    if pub_year and pub_month and pub_day:
+        if pub_min and pub_hour:
+            pub_date = datetime.fromisoformat(
+                f"{pub_year}-{pub_month}-{pub_day}:{pub_hour}:{pub_min}"
+            )
+        else:
+            pub_date = datetime.fromisoformat(f"{pub_year}-{pub_month}-{pub_day}")
+    if pub_date:
+        return pub_date.isoformat()
+    else:
+        return pub_date
+
+
 def extract_document(
     json_doc: Dict,
     outdir: str,
@@ -309,6 +334,8 @@ def extract_document(
         page_type = utag_data.get("content_type")
         section = utag_data.get("section", None)
         published_timestamp = json_doc.get("date_published")
+        if not published_timestamp:
+            published_timestamp = get_publication_date_from_utag(utag_data)
         modified_timestamp = json_doc.get("date_modified")
         scraped_timestamp = json_doc.get("time_retrieved")
         authors = json_doc.get("authors")
@@ -673,7 +700,7 @@ def _process_paths(
     queue: JoinableQueue,
     worker_id: int,
     outdir: str,
-    custom_segmentation_model_dir: Optional[str] = None
+    custom_segmentation_model_dir: Optional[str] = None,
 ) -> None:
     print(f"Starting worker {worker_id}")
     # Segmenters and tokenizers get setup based on language in extract_document
@@ -685,7 +712,12 @@ def _process_paths(
             with open(path) as file:
                 json_doc = json.load(file)
             segmenter, tokenizer = extract_document(
-                json_doc, outdir, segmenter, tokenizer, cuda_id=worker_id % 2, custom_segmentation_model_path=custom_segmentation_model_dir
+                json_doc,
+                outdir,
+                segmenter,
+                tokenizer,
+                cuda_id=worker_id % 2,
+                custom_segmentation_model_path=custom_segmentation_model_dir,
             )
         queue.task_done()
 
@@ -705,7 +737,12 @@ def _process_jsondocs(
         batch = queue.get()
         for json_doc in batch:
             segmenter, tokenizer = extract_document(
-                json_doc, outdir, segmenter, tokenizer, cuda_id=worker_id % 2, custom_segmentation_model_path=custom_segmentation_model_dir
+                json_doc,
+                outdir,
+                segmenter,
+                tokenizer,
+                cuda_id=worker_id % 2,
+                custom_segmentation_model_path=custom_segmentation_model_dir,
             )
         queue.task_done()
 
@@ -715,13 +752,22 @@ def _process_jsondocs(
 @click.argument("outputdir")
 @click.option("--n-workers", type=int, default=1)
 @click.option("--batchsize", type=int, default=100)
-@click.option("--custom-segmentation-dir", type=click.Path(dir_okay=True, file_okay=False))
-def fromfiles(inputdir, outputdir, n_workers, batchsize,
-              custom_segmentation_dir: Optional[str] = None):
+@click.option(
+    "--custom-segmentation-dir", type=click.Path(dir_okay=True, file_okay=False)
+)
+def fromfiles(
+    inputdir,
+    outputdir,
+    n_workers,
+    batchsize,
+    custom_segmentation_dir: Optional[str] = None,
+):
     multiprocessing.set_start_method("spawn")
     queue: JoinableQueue = JoinableQueue()
     workers = [
-        Process(target=_process_paths, args=(queue, i, outputdir, custom_segmentation_dir))
+        Process(
+            target=_process_paths, args=(queue, i, outputdir, custom_segmentation_dir)
+        )
         for i in range(n_workers)
     ]
     for worker in workers:
@@ -763,7 +809,9 @@ def fromfiles(inputdir, outputdir, n_workers, batchsize,
 )
 @click.option("--start-date", type=str, help="%Y-%m-%d", default=None)
 @click.option("--end-date", type=str, help="%Y-%m-%d", default=None)
-@click.option("--custom-segmentation-dir", type=click.Path(dir_okay=True, file_okay=False))
+@click.option(
+    "--custom-segmentation-dir", type=click.Path(dir_okay=True, file_okay=False)
+)
 def fromdb(
     outputdir: str,
     n_extractors: int,
@@ -774,7 +822,7 @@ def fromdb(
     port: int = 27200,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    custom_segmentation_dir: Optional[str] = None
+    custom_segmentation_dir: Optional[str] = None,
 ):
     multiprocessing.set_start_method("spawn")
 
@@ -783,7 +831,10 @@ def fromdb(
     queue = m.Queue(maxsize=1000)
 
     workers = [
-        Process(target=_process_jsondocs, args=(queue, i, outputdir, custom_segmentation_dir))
+        Process(
+            target=_process_jsondocs,
+            args=(queue, i, outputdir, custom_segmentation_dir),
+        )
         for i in range(n_extractors)
     ]
     for worker in workers:
