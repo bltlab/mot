@@ -78,7 +78,7 @@ def read_articles(inputfile: str) -> Generator[str, None, None]:
 def run() -> None:
     parser = ArgumentParser(description=__doc__)
     parser.add_argument(
-        "indir",
+        "inputdir",
         help="Dir with wikipedia corpora files by language",
     )
     parser.add_argument("--n-workers", type=int, default=1)
@@ -86,7 +86,7 @@ def run() -> None:
 
     counter = CharacterAverage()
 
-    for root, dirs, files in os.walk(args.indir):
+    for root, dirs, files in os.walk(args.inputdir):
         for file in files:
             language = os.path.basename(file)[:3]
             if args.n_workers == 1:
