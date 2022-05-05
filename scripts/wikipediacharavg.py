@@ -90,7 +90,7 @@ def run() -> None:
         for file in files:
             language = os.path.basename(file)[:3]
             if args.n_workers == 1:
-                for article in read_articles(file):
+                for article in read_articles(os.path.join(root, file)):
                     n_chars = average_chars(article)
                     counter.count(language, n_chars)
             else:
