@@ -90,13 +90,13 @@ def run() -> None:
         for file in files:
             language = os.path.basename(file)[:3]
             if args.n_workers == 1:
-                for article in read_articles(args.inputdir):
+                for article in read_articles(file):
                     n_chars = average_chars(article)
                     counter.count(language, n_chars)
             else:
                 with Pool(args.n_workers) as pool:
                     for n_chars in pool.imap_unordered(
-                        average_chars, read_articles(args.inputdir), chunksize=100
+                        average_chars, read_articles(file), chunksize=100
                     ):
                         counter.count(language, n_chars)
 
