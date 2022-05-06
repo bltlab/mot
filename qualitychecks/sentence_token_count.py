@@ -8,27 +8,33 @@ import json
 from argparse import ArgumentParser
 from collections import Counter, defaultdict
 from multiprocessing import Pool
-from typing import Generator
+from typing import Generator, Tuple
 import pandas as pd
 
 MINIMUM_SENTENCE_THRESHOLD = 10
 MINIMUM_TOKEN_THRESHOLD = 10
 
 
-def count_sentences_tokens(path: str) -> tuple[str, int, int]:
+def count_sentences_tokens(path: str) -> Tuple[str, int, int]:
     """Retrieves language, number of sentences, and number of tokens for each file"""
     print(f"Extracting data from {path}")
-    with open(path) as file:
-        data = json.load(file)
-        language = data.get("site_language")
-        sentences = data.get("sentences")
-        n_sentences = 0
-        if sentences:
-            n_sentences = len(sentences)
-        tokens = data.get("tokens")
-        n_tokens = 0
-        if tokens:
-            n_tokens = sum([len(sentence_tokens) for sentence in tokens for sentence_tokens in sentence])
+    with open(path, 'r', encoding='utf8') as file:
+        try:
+            data = json.load(file)
+
+            language = data.get("site_language")
+            sentences = data.get("sentences")
+            n_sentences = 0
+            if sentences:
+                n_sentences = len(sentences)
+            tokens = data.get("tokens")
+            n_tokens = 0
+            if tokens:
+                n_tokens = sum([len(sentence_tokens) for sentence in tokens for sentence_tokens in sentence])
+        except json.decoder.JSONDecodeError:
+            language = "ERROR_None"
+            n_sentences = 0
+            n_tokens = 0
         return language, n_sentences, n_tokens
 
 
