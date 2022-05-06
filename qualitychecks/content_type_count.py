@@ -25,10 +25,13 @@ def count_docs(path: str, key: str) -> Tuple[str, str]:
                 language = data.get("site_language")
             if key == "domain":
                 language = path.split("/")[-3]
-            content_type = data.get("content_type").capitalize()
+            content_type = data.get("content_type")
+            if content_type is not None:
+                content_type = content_type.capitalize()
             return language, content_type
     except json.decoder.JSONDecodeError:
         print(f"Json decode error for: {path}")
+        return "Error_language", "Error_content"
 
 
 class DocumentCounter:
