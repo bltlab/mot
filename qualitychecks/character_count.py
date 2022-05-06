@@ -8,7 +8,7 @@ import json
 from argparse import ArgumentParser
 from collections import Counter
 from multiprocessing import Pool
-from typing import Generator
+from typing import Generator, Tuple
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -16,10 +16,10 @@ import matplotlib.pyplot as plt
 MINIMUM_CHARACTER_THRESHOLD = 10
 
 
-def count_chars(path: str) -> tuple[str, str]:
+def count_chars(path: str) -> Tuple[str, str]:
     """Retrieves language and number of characters for each file"""
     print(f"Extracting data from {path}")
-    with open(path) as file:
+    with open(path, 'r', encoding='utf8') as file:
         data = json.load(file)
         language = data.get("site_language")
         n_chars = data.get("n_chars")
