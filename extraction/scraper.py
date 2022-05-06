@@ -413,8 +413,6 @@ async def insert_page(
                 )
                 collection.insert_one(document)
         else:
-            # TODO: Delete this print once done testing
-            print("Problem spot hit!")
             await insert_without_deduplication(collection, document, page, page_result)
     else:
         await insert_without_deduplication(collection, document, page, page_result)
