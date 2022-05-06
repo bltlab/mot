@@ -289,13 +289,19 @@ def get_publication_date_from_utag(utag_data: Dict) -> Optional[str]:
     pub_hour = utag_data.get("pub_hour")
     pub_min = utag_data.get("pub_minute")
     pub_date = None
-    if pub_year and pub_month and pub_day:
-        if pub_min and pub_hour:
-            pub_date = datetime.fromisoformat(
-                f"{pub_year}-{pub_month}-{pub_day}:{pub_hour}:{pub_min}"
-            )
-        else:
-            pub_date = datetime.fromisoformat(f"{pub_year}-{pub_month}-{pub_day}")
+    try:
+        if pub_year and pub_month and pub_day:
+            if pub_min and pub_hour:
+                pub_date = datetime.fromisoformat(
+                    f"{pub_year}-{pub_month}-{pub_day}:{pub_hour}:{pub_min}"
+                )
+            else:
+                pub_date = datetime.fromisoformat(f"{pub_year}-{pub_month}-{pub_day}")
+    except ValueError as e:
+        # Exception for days that aren't possible in months (possibly caused by leap year)
+        if pub_year and pub_month:
+            # Hack: still want to have the year and month if possible so hack date
+            pub_date = datetime.fromisoformat(f"{pub_year}-{pub_month}-01")
     if pub_date:
         return pub_date.isoformat()
     else:
@@ -455,6 +461,20 @@ def extract_document(
             page_type = "other"
         output_directory = os.path.join(outdir, iso + "_" + domain, page_type)
         os.makedirs(output_directory, exist_ok=True)
+
+        # Write the doc to special directory if pub date is too early and return
+        if output_doc.time_published and int(output_doc.time_published[:4]) < 2000:
+            removed_outdir = os.path.join(
+                outdir, iso + "_" + domain, "publication_date_too_early"
+            )
+            write_json_doc(
+                filename,
+                output_doc,
+                iso=iso,
+                domain=domain,
+                outdir=removed_outdir,
+            )
+            return segmenter, tokenizer
 
         try:
             write_json_doc(

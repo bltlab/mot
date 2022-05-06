@@ -21,6 +21,7 @@ tar -cf -  \
  --exclude "./eng_voazimbabwe/article/a_a-13-56-74-2009-04-13-voa39-69816827_1470821.json" \
  --exclude "./bod_voatibetan/article/a_chinese-scholars-come-to-listen-to-dalai-lama--136276108_1123708.json" \
  --exclude "./eng_learningenglish_voanews/article/a_a-23-2005-10-25-voa7-83033387_117668.json" \
+ --exclude "./*/publication_date_too_early" \
   -C $INDIR . | tar -xC $OUTDIR
 
 find $OUTDIR -type d -empty -delete
