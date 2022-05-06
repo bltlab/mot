@@ -35,6 +35,8 @@ from extraction.segmentation import Segmenter, setup_segmenter, SEGMENTABLE_LANG
 from extraction.tokenization import setup_tokenizer, TOKENIZABLE_LANGUAGES
 
 # Thresholds for counting cld3 prediction as valid
+from extraction.utils import get_publication_date_from_utag
+
 CLD3_PROBABILITY_THRESHOLD = 0.9
 CLD3_PROPORTION_THRESHOLD = 0.05
 
@@ -277,35 +279,6 @@ def write_removed_paragraphs(
             clean_paragraph = paragraph.replace("\t", " ").replace("\n", " ")
             print(f"{num}\t{prob}\t{prop}\t{clean_paragraph}", file=outfile)
 
-
-def get_publication_date_from_utag(utag_data: Dict) -> Optional[str]:
-    """
-    Returns a datetime in format "2016-03-15T00:00:00"
-    """
-    # pub_year, pub_month, pub_day, pub_hour,  pub_min
-    pub_year = utag_data.get("pub_year")
-    pub_month = utag_data.get("pub_month")
-    pub_day = utag_data.get("pub_day")
-    pub_hour = utag_data.get("pub_hour")
-    pub_min = utag_data.get("pub_minute")
-    pub_date = None
-    try:
-        if pub_year and pub_month and pub_day:
-            if pub_min and pub_hour:
-                pub_date = datetime.fromisoformat(
-                    f"{pub_year}-{pub_month}-{pub_day}:{pub_hour}:{pub_min}"
-                )
-            else:
-                pub_date = datetime.fromisoformat(f"{pub_year}-{pub_month}-{pub_day}")
-    except ValueError as e:
-        # Exception for days that aren't possible in months (possibly caused by leap year)
-        if pub_year and pub_month:
-            # Hack: still want to have the year and month if possible so hack date
-            pub_date = datetime.fromisoformat(f"{pub_year}-{pub_month}-01")
-    if pub_date:
-        return pub_date.isoformat()
-    else:
-        return pub_date
 
 
 def extract_document(
