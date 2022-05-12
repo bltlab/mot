@@ -47,7 +47,20 @@ SEGMENTABLE_LANGUAGES = {
 
 
 CUSTOM_ERSATZ_MODELS = {
-    "aze", "bos", "hat", "hau", "kin", "lin", "mkd", "nde", "orm", "sna", "som", "sqi", "swh", "uzb"
+    "aze",
+    "bos",
+    "hat",
+    "hau",
+    "kin",
+    "lin",
+    "mkd",
+    "nde",
+    "orm",
+    "sna",
+    "som",
+    "sqi",
+    "swh",
+    "uzb",
 }
 
 SEGMENTABLE_LANGUAGES = SEGMENTABLE_LANGUAGES.union(CUSTOM_ERSATZ_MODELS)
@@ -209,13 +222,17 @@ class ErsatzSegmenter(Segmenter):
     Class for pre-trained ersatz models that come with the package.
     """
 
-    def __init__(self, iso: str = "xx", cuda_id: Optional[int] = None, custom_segmentation_model_path: Optional[str] = None):
+    def __init__(
+        self,
+        iso: str = "xx",
+        cuda_id: Optional[int] = None,
+        custom_segmentation_model_path: Optional[str] = None,
+    ):
         super().__init__()
         self.language = iso
         self.ersatz_model: ErsatzModel = ErsatzSegmenter.setup_ersatz(
             iso, cuda_id, custom_segmentation_model_path
         )
-
 
     def segment(self, text: str) -> List[str]:
         text = SPACE_CHAR_REGEX.sub("", text)
@@ -230,7 +247,9 @@ class ErsatzSegmenter(Segmenter):
         return sents
 
     @staticmethod
-    def setup_ersatz(iso: str, cuda_id: Optional[int] = None, custom_model_dir: Optional[str] = None) -> ErsatzModel:
+    def setup_ersatz(
+        iso: str, cuda_id: Optional[int] = None, custom_model_dir: Optional[str] = None
+    ) -> ErsatzModel:
         # Load model manually
         # Use model to split sentences
         if iso == "eng":
@@ -274,8 +293,11 @@ class ErsatzSegmenter(Segmenter):
         return ErsatzModel(model, candidates)
 
 
-def setup_segmenter(iso: str = "xx", cuda_id: Optional[int] = None,
-                    custom_segmentation_model_path: Optional[str] = None) -> Segmenter:
+def setup_segmenter(
+    iso: str = "xx",
+    cuda_id: Optional[int] = None,
+    custom_segmentation_model_path: Optional[str] = None,
+) -> Segmenter:
     """Setup segmenters. Use cuda id to setup ersatz models on multiple gpus if applicable."""
     if iso == "tir":
         return GeezSegmenter("tir")
@@ -312,7 +334,9 @@ def setup_segmenter(iso: str = "xx", cuda_id: Optional[int] = None,
     elif iso == "mya":
         return StanzaSegmenter(iso)
     elif iso in CUSTOM_ERSATZ_MODELS:
-        return ErsatzSegmenter(iso, custom_segmentation_model_path=custom_segmentation_model_path)
+        return ErsatzSegmenter(
+            iso, custom_segmentation_model_path=custom_segmentation_model_path
+        )
     else:
         return ErsatzSegmenter(iso, cuda_id)
 

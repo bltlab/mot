@@ -280,7 +280,6 @@ def write_removed_paragraphs(
             print(f"{num}\t{prob}\t{prop}\t{clean_paragraph}", file=outfile)
 
 
-
 def extract_document(
     json_doc: Dict,
     outdir: str,
