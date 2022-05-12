@@ -335,9 +335,9 @@ async def scrape_page(
         if date_published:
             date_published = datetime.fromisoformat(date_published)
         if not date_published:
-            date_published = datetime.fromisoformat(
-                get_publication_date_from_utag(utag_data)
-            )
+            utag_date = get_publication_date_from_utag(utag_data)
+            if utag_date:
+                date_published = datetime.fromisoformat(utag_date)
         if date_modified:
             date_modified = datetime.strptime(date_modified, "%Y-%m-%d %H:%M:%SZ")
 

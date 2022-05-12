@@ -49,7 +49,7 @@ def get_publication_date_from_utag(utag_data: Dict) -> Optional[str]:
         if pub_year and pub_month:
             # Hack: still want to have the year and month if possible so hack date
             pub_date = datetime.fromisoformat(f"{pub_year}-{pub_month}-01")
-    if pub_date:
-        return pub_date.isoformat()
-    else:
+    if pub_date is None:
         return pub_date
+    else:
+        return pub_date.isoformat()
