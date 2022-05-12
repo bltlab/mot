@@ -16,14 +16,10 @@ import matplotlib.pyplot as plt
 MINIMUM_CHARACTER_THRESHOLD = 10
 
 
-def count_chars(path: str) -> Tuple[str, str]:
+def count_chars(article: str) -> Tuple[str, str]:
     """Retrieves language and number of characters for each file"""
-    print(f"Extracting data from {path}")
-    with open(path, 'r', encoding='utf8') as file:
-        data = json.load(file)
-        language = data.get("site_language")
-        n_chars = data.get("n_chars")
-        return language, n_chars
+    n_chars = len(article)
+    return n_chars
 
 
 class CharacterCounter:
@@ -63,14 +59,6 @@ class CharacterCounter:
         plt.show()
 
 
-def find_docpaths(inputdir: str) -> Generator[str, None, None]:
-    for root, dirs, files in os.walk(inputdir):
-        if root.split("/")[-1] == "article":
-            for file in files:
-                if file.endswith(".json"):
-                    yield os.path.join(root, file)
-
-
 def run() -> None:
     parser = ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -81,19 +69,26 @@ def run() -> None:
     args = parser.parse_args()
 
     counter = CharacterCounter()
-
-    if args.n_workers == 1:
-        for path in find_docpaths(args.inputdir):
-            language, n_chars = count_chars(path)
-            counter.count(language, n_chars)
-    else:
-        with Pool(args.n_workers) as pool:
-            for language, n_chars in pool.imap_unordered(
-                count_chars, find_docpaths(args.inputdir), chunksize=100
-            ):
-                counter.count(language, n_chars)
-
+    for root, dirs, files in os.walk(args.inputdir):
+        for file in files:
+            language = os.path.basename(file)[:3]
+            if args.n_workers == 1:
+                for article in read_articles(os.path.join(root, file)):
+                    language, n_chars = count_chars(article)
+                    counter.count(language, n_chars)
+            else:
+                with Pool(args.n_workers) as pool:
+                    for n_chars in pool.imap_unordered(
+                        count_chars, read_articles(os.path.join(root, file)), chunksize=100
+                    ):
+                        counter.count(language, n_chars)
     counter.histogram()
+
+
+def read_articles(inputfile: str) -> Generator[str, None, None]:
+    with open(inputfile, 'r', encoding='utf8') as infile:
+        for line in infile:
+            yield line
 
 
 if __name__ == "__main__":

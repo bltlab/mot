@@ -17,6 +17,8 @@ from spacy.lang.zh import Chinese
 from spacy.tokenizer import Tokenizer
 
 from extraction.segmentation import StanzaSegmenter
+from extraction.utils import SPACE_CHARS_STR
+
 
 TOKENIZABLE_LANGUAGES = {
     "amh",
@@ -94,9 +96,11 @@ class KhmerTokenizer(BaseTokenizer):
         self.khmer_tokenize = load_khmernltk()
 
     def tokenize(self, text: str) -> List[str]:
-        # This tokenizer doesn't seem bad but is capable of producing whitespace tokens
-        # And that's not good, so needs filtered out, ideally replace this one eventually
-        return [token for token in self.khmer_tokenize(text) if token.strip()]
+        return [
+            token.strip(SPACE_CHARS_STR)
+            for token in self.khmer_tokenize(text)
+            if token.strip(SPACE_CHARS_STR)
+        ]
 
 
 class LaoTokenizer(BaseTokenizer):
@@ -109,7 +113,11 @@ class LaoTokenizer(BaseTokenizer):
         self.language = "lao"
 
     def tokenize(self, text: str) -> List[str]:
-        return laonlp.tokenize.word_tokenize(text)
+        return [
+            token.strip().strip(SPACE_CHARS_STR)
+            for token in laonlp.tokenize.word_tokenize(text)
+            if token.strip().strip(SPACE_CHARS_STR)
+        ]
 
 
 class RussianTokenizer(BaseTokenizer):
@@ -157,7 +165,11 @@ class ThaiTokenizer(BaseTokenizer):
         self.language = "tha"
 
     def tokenize(self, text: str) -> List[str]:
-        return pythainlp.tokenize.word_tokenize(text)
+        return [
+            token.strip().strip(SPACE_CHARS_STR)
+            for token in pythainlp.tokenize.word_tokenize(text)
+            if token.strip().strip(SPACE_CHARS_STR)
+        ]
 
 
 class GeezTokenizer(BaseTokenizer):
@@ -257,6 +269,8 @@ def setup_tokenizer(iso: str = "xx") -> BaseTokenizer:
         return StanzaTokenizer(iso)
     elif iso == "mya":
         return StanzaTokenizer(iso)
+    elif iso == "khm":
+        return KhmerTokenizer()
     else:
         return SpacyTokenizer()
 

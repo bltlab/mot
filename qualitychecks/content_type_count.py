@@ -8,24 +8,30 @@ import json
 from argparse import ArgumentParser
 from collections import Counter, defaultdict
 from multiprocessing import Pool
-from typing import Generator
+from typing import Generator, Tuple
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-def count_docs(path: str, key: str) -> tuple[str, str]:
+def count_docs(path: str, key: str) -> Tuple[str, str]:
     """Retrieves language and content type for each file"""
     print(f"Extracting data from {path}")
-    with open(path) as file:
-        data = json.load(file)
-        if key == "language":
-            language = data.get("site_language")
-        if key == "domain":
-            language = path.split("/")[-3]
-        content_type = data.get("content_type").capitalize()
-        return language, content_type
+    try:
+        with open(path, 'r', encoding="utf8") as file:
+            data = json.load(file)
+            if key == "language":
+                language = data.get("site_language")
+            if key == "domain":
+                language = path.split("/")[-3]
+            content_type = data.get("content_type")
+            if content_type is not None:
+                content_type = content_type.capitalize()
+            return language, content_type
+    except json.decoder.JSONDecodeError:
+        print(f"Json decode error for: {path}")
+        return "Error_language", "Error_content"
 
 
 class DocumentCounter:

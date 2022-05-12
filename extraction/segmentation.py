@@ -1,3 +1,4 @@
+import re
 from abc import ABC, abstractmethod
 from io import StringIO
 from typing import Sequence, List, Optional
@@ -13,6 +14,8 @@ from attr import attrs
 from ersatz.candidates import MultilingualPunctuation, Split, PunctuationSpace
 from ersatz.split import EvalModel
 from ersatz.utils import get_model_path
+
+from extraction.utils import SPACE_CHARS_STR
 
 SEGMENTABLE_LANGUAGES = {
     "amh",
@@ -41,6 +44,29 @@ SEGMENTABLE_LANGUAGES = {
     "vie",
     "yue",
 }
+
+
+CUSTOM_ERSATZ_MODELS = {
+    "aze",
+    "bos",
+    "hat",
+    "hau",
+    "kin",
+    "lin",
+    "mkd",
+    "nde",
+    "orm",
+    "sna",
+    "som",
+    "sqi",
+    "swh",
+    "uzb",
+}
+
+SEGMENTABLE_LANGUAGES = SEGMENTABLE_LANGUAGES.union(CUSTOM_ERSATZ_MODELS)
+
+
+SPACE_CHAR_REGEX = re.compile(rf"[{SPACE_CHARS_STR}]")
 
 
 class Segmenter(ABC):
@@ -111,7 +137,10 @@ class LaoSegmenter(Segmenter):
         self.language = "lao"
 
     def segment(self, text: str) -> List[str]:
-        return laonlp.tokenize.sent_tokenize(text)
+        text = SPACE_CHAR_REGEX.sub("", text)
+        return [
+            sent.strip() for sent in laonlp.tokenize.sent_tokenize(text) if sent.strip()
+        ]
 
 
 class RussianSegmenter(Segmenter):
@@ -130,7 +159,7 @@ class RussianSegmenter(Segmenter):
 
 class PersianSegmenter(Segmenter):
     """
-    PyThaiNLP uses a CRF trained on TED dataset as the default segmentation approach.
+    Persian segmenter using Parsivar. Note: Also does normalization..
     """
 
     def __init__(self, lang: str):
@@ -157,7 +186,12 @@ class ThaiSegmenter(Segmenter):
         self.language = "tha"
 
     def segment(self, thai_str: str) -> List[str]:
-        return pythainlp.tokenize.sent_tokenize(thai_str)
+        thai_str = SPACE_CHAR_REGEX.sub("", thai_str)
+        return [
+            sent.strip()
+            for sent in pythainlp.tokenize.sent_tokenize(thai_str)
+            if sent.strip()
+        ]
 
 
 class GeezSegmenter(Segmenter):
@@ -185,16 +219,24 @@ class ErsatzModel:
 
 class ErsatzSegmenter(Segmenter):
     """
-    PyThaiNLP uses a CRF trained on TED dataset as the default segmentation approach.
+    Class for pre-trained ersatz models that come with the package.
     """
 
-    def __init__(self, iso: str = "xx", cuda_id: Optional[int] = None):
+    def __init__(
+        self,
+        iso: str = "xx",
+        cuda_id: Optional[int] = None,
+        custom_segmentation_model_path: Optional[str] = None,
+    ):
         super().__init__()
         self.language = iso
-        self.ersatz_model: ErsatzModel = ErsatzSegmenter.setup_ersatz(iso, cuda_id)
+        self.ersatz_model: ErsatzModel = ErsatzSegmenter.setup_ersatz(
+            iso, cuda_id, custom_segmentation_model_path
+        )
 
     def segment(self, text: str) -> List[str]:
-        return self.run_ersatz([text])
+        text = SPACE_CHAR_REGEX.sub("", text)
+        return [sent.strip() for sent in self.run_ersatz([text]) if sent.strip()]
 
     def run_ersatz(self, texts: Sequence[str]) -> List[str]:
         output_file = StringIO()
@@ -205,7 +247,9 @@ class ErsatzSegmenter(Segmenter):
         return sents
 
     @staticmethod
-    def setup_ersatz(iso: str, cuda_id: Optional[int] = None) -> ErsatzModel:
+    def setup_ersatz(
+        iso: str, cuda_id: Optional[int] = None, custom_model_dir: Optional[str] = None
+    ) -> ErsatzModel:
         # Load model manually
         # Use model to split sentences
         if iso == "eng":
@@ -236,6 +280,8 @@ class ErsatzSegmenter(Segmenter):
             model_path = get_model_path("zh")
         elif iso == "yue":
             model_path = get_model_path("zh")
+        elif iso in CUSTOM_ERSATZ_MODELS:
+            model_path = f"{custom_model_dir}/{iso}.checkpoint.model"
         elif iso == "xx":
             model_path = get_model_path("default-multilingual")
         else:
@@ -247,7 +293,11 @@ class ErsatzSegmenter(Segmenter):
         return ErsatzModel(model, candidates)
 
 
-def setup_segmenter(iso: str = "xx", cuda_id: Optional[int] = None) -> Segmenter:
+def setup_segmenter(
+    iso: str = "xx",
+    cuda_id: Optional[int] = None,
+    custom_segmentation_model_path: Optional[str] = None,
+) -> Segmenter:
     """Setup segmenters. Use cuda id to setup ersatz models on multiple gpus if applicable."""
     if iso == "tir":
         return GeezSegmenter("tir")
@@ -283,6 +333,10 @@ def setup_segmenter(iso: str = "xx", cuda_id: Optional[int] = None) -> Segmenter
         return StanzaSegmenter(iso)
     elif iso == "mya":
         return StanzaSegmenter(iso)
+    elif iso in CUSTOM_ERSATZ_MODELS:
+        return ErsatzSegmenter(
+            iso, custom_segmentation_model_path=custom_segmentation_model_path
+        )
     else:
         return ErsatzSegmenter(iso, cuda_id)
 

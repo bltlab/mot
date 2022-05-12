@@ -5,6 +5,7 @@ Script to extract text from json dumped scrapes from scrapes mongodb.
 import os
 import json
 import urllib.parse
+from datetime import datetime
 
 import click
 from torch import multiprocessing
@@ -34,6 +35,8 @@ from extraction.segmentation import Segmenter, setup_segmenter, SEGMENTABLE_LANG
 from extraction.tokenization import setup_tokenizer, TOKENIZABLE_LANGUAGES
 
 # Thresholds for counting cld3 prediction as valid
+from extraction.utils import get_publication_date_from_utag
+
 CLD3_PROBABILITY_THRESHOLD = 0.9
 CLD3_PROPORTION_THRESHOLD = 0.05
 
@@ -284,9 +287,9 @@ def extract_document(
     # tokenizers: Dict[str, Tokenizer],
     segmenter: Optional[Segmenter],
     tokenizer: Optional[Tokenizer],
+    custom_segmentation_model_path: Optional[str] = None,
     cuda_id=None,
 ) -> Tuple[Optional[Segmenter], Tokenizer]:
-
     url = urllib.parse.unquote(json_doc.get("url", ""))
     modified_url = (
         url.replace(".net/", ".com/")
@@ -309,6 +312,8 @@ def extract_document(
         page_type = utag_data.get("content_type")
         section = utag_data.get("section", None)
         published_timestamp = json_doc.get("date_published")
+        if not published_timestamp:
+            published_timestamp = get_publication_date_from_utag(utag_data)
         modified_timestamp = json_doc.get("date_modified")
         scraped_timestamp = json_doc.get("time_retrieved")
         authors = json_doc.get("authors")
@@ -359,7 +364,7 @@ def extract_document(
         if iso in SEGMENTABLE_LANGUAGES and (
             segmenter is None or segmenter.language != iso
         ):
-            segmenter = setup_segmenter(iso, cuda_id)
+            segmenter = setup_segmenter(iso, cuda_id, custom_segmentation_model_path)
         elif iso not in SEGMENTABLE_LANGUAGES:
             segmenter = None
         # segmenter = segmenters[iso] if iso in segmenters else segmenters["xx"]
@@ -373,6 +378,11 @@ def extract_document(
             ]
         else:
             sentences = None
+
+        # Filter out empty sentences
+        if sentences:
+            sentences = [sent for sent in sentences if sent]
+
         if iso in TOKENIZABLE_LANGUAGES and (
             tokenizer is None or tokenizer.language != iso
         ):
@@ -423,6 +433,20 @@ def extract_document(
             page_type = "other"
         output_directory = os.path.join(outdir, iso + "_" + domain, page_type)
         os.makedirs(output_directory, exist_ok=True)
+
+        # Write the doc to special directory if pub date is too early and return
+        if output_doc.time_published and int(output_doc.time_published[:4]) < 2000:
+            removed_outdir = os.path.join(
+                outdir, iso + "_" + domain, "publication_date_too_early"
+            )
+            write_json_doc(
+                filename,
+                output_doc,
+                iso=iso,
+                domain=domain,
+                outdir=removed_outdir,
+            )
+            return segmenter, tokenizer
 
         try:
             write_json_doc(
@@ -668,6 +692,7 @@ def _process_paths(
     queue: JoinableQueue,
     worker_id: int,
     outdir: str,
+    custom_segmentation_model_dir: Optional[str] = None,
 ) -> None:
     print(f"Starting worker {worker_id}")
     # Segmenters and tokenizers get setup based on language in extract_document
@@ -679,7 +704,12 @@ def _process_paths(
             with open(path) as file:
                 json_doc = json.load(file)
             segmenter, tokenizer = extract_document(
-                json_doc, outdir, segmenter, tokenizer, cuda_id=worker_id % 2
+                json_doc,
+                outdir,
+                segmenter,
+                tokenizer,
+                cuda_id=worker_id % 2,
+                custom_segmentation_model_path=custom_segmentation_model_dir,
             )
         queue.task_done()
 
@@ -688,6 +718,7 @@ def _process_jsondocs(
     queue: JoinableQueue,
     worker_id: int,
     outdir: str,
+    custom_segmentation_model_dir: Optional[str] = None
     # tokenizers: Dict[str, Tokenizer],
 ) -> None:
     print(f"Starting worker {worker_id}")
@@ -698,7 +729,12 @@ def _process_jsondocs(
         batch = queue.get()
         for json_doc in batch:
             segmenter, tokenizer = extract_document(
-                json_doc, outdir, segmenter, tokenizer, cuda_id=worker_id % 2
+                json_doc,
+                outdir,
+                segmenter,
+                tokenizer,
+                cuda_id=worker_id % 2,
+                custom_segmentation_model_path=custom_segmentation_model_dir,
             )
         queue.task_done()
 
@@ -708,11 +744,22 @@ def _process_jsondocs(
 @click.argument("outputdir")
 @click.option("--n-workers", type=int, default=1)
 @click.option("--batchsize", type=int, default=100)
-def fromfiles(inputdir, outputdir, n_workers, batchsize):
+@click.option(
+    "--custom-segmentation-dir", type=click.Path(dir_okay=True, file_okay=False)
+)
+def fromfiles(
+    inputdir,
+    outputdir,
+    n_workers,
+    batchsize,
+    custom_segmentation_dir: Optional[str] = None,
+):
     multiprocessing.set_start_method("spawn")
     queue: JoinableQueue = JoinableQueue()
     workers = [
-        Process(target=_process_paths, args=(queue, i, outputdir))
+        Process(
+            target=_process_paths, args=(queue, i, outputdir, custom_segmentation_dir)
+        )
         for i in range(n_workers)
     ]
     for worker in workers:
@@ -754,6 +801,9 @@ def fromfiles(inputdir, outputdir, n_workers, batchsize):
 )
 @click.option("--start-date", type=str, help="%Y-%m-%d", default=None)
 @click.option("--end-date", type=str, help="%Y-%m-%d", default=None)
+@click.option(
+    "--custom-segmentation-dir", type=click.Path(dir_okay=True, file_okay=False)
+)
 def fromdb(
     outputdir: str,
     n_extractors: int,
@@ -764,6 +814,7 @@ def fromdb(
     port: int = 27200,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    custom_segmentation_dir: Optional[str] = None,
 ):
     multiprocessing.set_start_method("spawn")
 
@@ -772,7 +823,10 @@ def fromdb(
     queue = m.Queue(maxsize=1000)
 
     workers = [
-        Process(target=_process_jsondocs, args=(queue, i, outputdir))
+        Process(
+            target=_process_jsondocs,
+            args=(queue, i, outputdir, custom_segmentation_dir),
+        )
         for i in range(n_extractors)
     ]
     for worker in workers:

@@ -26,7 +26,7 @@ from pymongo import MongoClient, DESCENDING, HASHED
 from pymongo.collection import Collection
 
 from extraction.downloadsitemaps import Sitemap
-from extraction.utils import get_sitemap_collection
+from extraction.utils import get_sitemap_collection, get_publication_date_from_utag
 
 VOA_CORPUS = "voa_corpus"
 VAR_UTAG_PATTERN = re.compile(r"var\s+utag_data\s*=\s*({.*})")
@@ -334,6 +334,10 @@ async def scrape_page(
         date_modified = ld_json.get("dateModified")
         if date_published:
             date_published = datetime.fromisoformat(date_published)
+        if not date_published:
+            utag_date = get_publication_date_from_utag(utag_data)
+            if utag_date:
+                date_published = datetime.fromisoformat(utag_date)
         if date_modified:
             date_modified = datetime.strptime(date_modified, "%Y-%m-%d %H:%M:%SZ")
 
@@ -410,25 +414,31 @@ async def insert_page(
                     }
                 )
                 collection.insert_one(document)
+        else:
+            await insert_without_deduplication(collection, document, page, page_result)
     else:
-        # Insert document normally
-        try:
-            document["latest"] = True
-            collection.insert_one(document)
-        except UnicodeEncodeError as e:
-            print(f"Unicode error on {page.url}")
-            document = page.to_dict()
-            document["latest"] = False
-            document.update(
-                {
-                    "error_message": str(e),
-                    "success": False,
-                    "iso": page.sitemap_prov.sitemap.iso,
-                    "language": page.sitemap_prov.sitemap.language,
-                    "time_retrieved": page_result.time_retrieved,
-                }
-            )
-            collection.insert_one(document)
+        await insert_without_deduplication(collection, document, page, page_result)
+
+
+async def insert_without_deduplication(collection, document, page, page_result):
+    # Insert document normally
+    try:
+        document["latest"] = True
+        collection.insert_one(document)
+    except UnicodeEncodeError as e:
+        print(f"Unicode error on {page.url}")
+        document = page.to_dict()
+        document["latest"] = False
+        document.update(
+            {
+                "error_message": str(e),
+                "success": False,
+                "iso": page.sitemap_prov.sitemap.iso,
+                "language": page.sitemap_prov.sitemap.language,
+                "time_retrieved": page_result.time_retrieved,
+            }
+        )
+        collection.insert_one(document)
 
 
 async def scrape_and_insert(
