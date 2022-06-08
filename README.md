@@ -3,7 +3,7 @@ This is the repository for Multilingual Open Text (MOT), a project at Brandeis U
 
 MOT was created by Chester Palen-Michel, June Kim, and Constantine Lignos.
 
-If you use the corpus please cite our paper:
+If you use the corpus please cite our [paper](https://arxiv.org/abs/2201.05609):
 ```
 @article{palen2022multilingual,
   title={Multilingual Open Text 1.0: Public Domain News in 44 Languages},
