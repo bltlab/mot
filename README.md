@@ -57,6 +57,91 @@ yue
 .
 Note just for Pashto we provide sentence splits but not yet tokenization.
 
+# Usage
+
+## Overview
+The script mot/motext/scripts/motext.py contains two commands that assist in accessing data in the MOT corpus. These are ```search``` and ```extract```. 
+For a description of these commands, run ```motext.py --help```:
+
+```
+
+motext.py --help
+    Usage: motext.py [OPTIONS] COMMAND [ARGS]...
+
+    Options:
+        --help  Show this message and exit.
+
+    Commands:
+        extract  Extract the json documents of the desired content types in the...
+        search   Search for json files with the keyword string in the source...
+  
+```
+
+
+### Extract
+#### Extracting given a source directory
+The extract command takes in a folder and extracts information from the JSON files, converting into text files. a full call to this function may look like this:
+```motext.py extract units source output_dir --num-files (int1) --max-per-file (int2) types (type1,type2, etc.) --include-title (bool1) --include-authors (bool2)```
+
+This will produce a new directory ```output_dir``` containing subdirectories ```output_dir\type1```, ```output_dir\type2``` etc. Extracted files will be sorted by content type in their respective directories.
+
+---
+The arguments are as follows:
+  ```units```: choose from [sentences, tokens, paragraphs]. Extract will print one sentence/paragraph per line or a sentence of tokens per line.
+  ```source```: this is the source directory from which data will be extracted (ex: swh_voaswahili)
+  ```output_dir```: This is the folder to which you would like the data extracted. If output_dir does not exist, a new directory will be created.
+  ```(optional) num-files```: The total number of files to extract from source.
+  ```(optional) max-per-file```: The max number of units to extract per file (the first max-per-file units will be extracted)
+  ```(optional) types```: The content types to extract from the source directory (ex: article,audio). By default will take all available. Input with commas and no spaces.
+  ```(optional) include-title```: Whether to include the title at the top of each document on its own line
+  ```(optional) include-authors```: Whether to include authors below the title, each on their own line. 
+---
+Say you would like to extract sentences from "swh_voaswahili" of all content types (this will include article, audio, video, and photo) to the directory "output_folder" including titles and authors. 
+
+Run the following:
+
+```motext.py extract sentences swh_voaswahili output_folder --include-title True --include-authors True```
+
+If instead you want one paragraph per line, run:
+
+```motext.py extract paragraphs swh_voaswahili output_folder --include-title True --include-authors True```
+
+If you only want 6 files total, run:
+
+```motext.py extract sentences swh_voaswahili output_folder --num-files 6 --include-title True --include-authors True```
+
+If you want to constrain the number of lines per file to 7, run:
+
+```motext.py extract sentences swh_voaswahili output_folder --max-per-file 7```
+
+If you want all audio and photo content, run:
+
+```motext.py extract sentences swh_voaswahili output_folder --types audio,photo```
+
+Note that content types are separated by a comma and no spaces.
+#### Extracting given a source text file
+The ```source``` argument of ```extract``` can also be a text file containing paths directly to json files. Most efficiently, this will be a text file produced by the ```search``` function, outlined in the **Search** section below. To use ```extract``` in this way, it is the same syntax as if the text file were a directory. An example of this usage is as follows:
+
+```motext.py extract sentences filter_text_file.txt output_folder```
+### Search
+The ```search``` function allows the user to produce a text file of paths to json files that are tagged by a keyword. To call ```search```, run:
+
+```motext.py search source output_dir filename keyword --types (type1,type2, etc.)```
+
+Say you would like a list of all articles in swh_voaswahili that are tagged with "Afrika". 
+
+Run:
+
+```motext.py search swh_voaswahili searches_dir afrika_search Afrika```
+
+The list will be stored in ```afrika_search.txt``` in ```searches_dir```. 
+
+Now say you want to constrain the content types you are searching through to only audio and videos. 
+
+Run:
+
+```motext.py search swh_voaswahili searches_dir afrika_search Afrika --types audio,video```
+
 # Code Release
 This code release includes all the code 
 we used to scrape and extract text from Voice of America.
