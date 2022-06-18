@@ -127,3 +127,15 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Dot files
+.DS_Store
+
+# Editors
+.idea/
+*~
+*.swp
+
+# Data
+/release/
+*.tgz
