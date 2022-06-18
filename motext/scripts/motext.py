@@ -1,10 +1,15 @@
-# -*- coding: utf-8 -*-
 import os
 import json
-import click
 from pathlib import Path
-from collections import Counter
-from typing import List
+from typing import Counter, List, Tuple
+
+import click
+
+UNIT_PARAGRAPHS = "paragraphs"
+UNIT_SENTENCES = "sentences"
+UNIT_TOKENS = "tokens"
+VALID_UNITS = (UNIT_PARAGRAPHS, UNIT_SENTENCES, UNIT_TOKENS)
+VALID_CONTENT_TYPES = ("article", "audio", "photo", "video")
 
 
 @click.group()
@@ -12,56 +17,56 @@ def cli() -> None:
     pass
 
 
-@click.argument("output_dir")
+@cli.command()
+@click.argument("units", type=str)
 @click.argument("source", type=click.Path(exists=True))
-@click.argument("form", type=str)
+@click.argument("output_dir")
 @click.option(
-    "--num-files",
+    "--max-files",
     default=0,
     type=int,
-    help="the number of files in the directory that you want to extract to text (default: unlimited)",
+    help="maximum number of files to extract to text (default: unlimited)",
 )
 @click.option(
     "--max-per-file",
     default=0,
     type=int,
-    help="the number of sentences or paragraphs per file that you want to extract to text (default: unlimited)",
+    help="number of sentences or paragraphs per file that you want to extract to text (default: unlimited)",
 )
 @click.option(
     "--types",
     default="",
-    help="content types to extract, specify with a comma and no spaces (e.g. --types article,video). "
+    help="content types to extract, specified joined by comma (e.g. --types article,video)."
     + "By default, all content types are extracted.",
 )
 @click.option(
     "--include-title",
     type=bool,
     default=False,
-    help="whether to include the title of the article at the top of the text file. (default: False)",
+    help="whether to include the title at the top of the text file. (default: false)",
 )
 @click.option(
     "--include-authors",
     type=bool,
     default=False,
-    help="whether to include the authors of the article at the top of the text file. (default: False)",
+    help="whether to include the authors at the top of the text file. (default: false)",
 )
-@cli.command()
-# TODO: Add full type annotations
 def extract(
-    form: str,
+    units: str,
     source: Path,
     output_dir: Path,
-    num_files: int = 0,
+    max_files: int = 0,
     max_per_file: int = 0,
     types: str = "",
     include_title: bool = False,
     include_authors: bool = False,
 ) -> None:
-    """
+    """Extract the json documents of the desired content types in the source directory into text files in the output directory.
+
     Parameters
     ----------
-    form : string
-        must choose from the strings: {sentence, paragraph, token} (not case sensitive), chooses how to extract the data
+    units : string
+        must choose from the strings: {sentences, paragraphs, tokens} (not case sensitive), chooses how to extract the data
     source : path
         the directory of json files to extract from or a text file containing paths to json files extract from
     output_dir : path
@@ -69,7 +74,7 @@ def extract(
     num_files : int, optional
         the number of files to extract from
     max_per_file : int, optional
-        the number of sentences, paragraphs, or tokens extracted from each file
+        the number of sentences (units is sentences or tokens) or paragraphs to extract from each file
     types : string, optional
         The content types to extract from.
     include_title : boolean, optional
@@ -87,39 +92,40 @@ def extract(
     None.
 
     """
-    form = form.lower()
-    if form not in ["sentence", "paragraph", "token"]:
-        raise ValueError(
-            "Must choose sentence, paragraph, or token for form argument"
-        )
+    # Validate units
+    units = units.lower()
+    if units not in VALID_UNITS:
+        raise ValueError(f"Unknown unit {repr(units)}. Choices are {VALID_UNITS}")
 
-    if form == "token" and include_title:
+    if units == UNIT_TOKENS and include_title:
         # Titles are not tokenized yet in MOT
-        raise ValueError("Titles cannot be included if form is token")
+        raise ValueError("Titles cannot be included if unit is tokens")
 
     if os.path.isfile(source):
-        # This checks if user is applying a filter (a text file with paths in it), then if they are, uses the helper function _extract_filtered
+        # This checks if user is applying a filter (a text file with paths in it), then if they are,
+        # uses the helper function _extract_filtered
         _extract_filtered(
-            form,
+            units,
             source,
             output_dir,
-            num_files,
+            max_files,
             max_per_file,
             include_title,
             include_authors,
         )
     else:
         content_types = _parse_types(types, source)
-        # If the user gives types, we use those. If not, we look at all subdirectories of the source directory
+        # If the user gives types, we use those. If not, we look at all subdirectories of the source
+        # directory
         os.makedirs(output_dir, exist_ok=True)
         files_extracted = 0
         for content_type in content_types:
             cur_dir = Path(source) / Path(content_type)
-            files = _file_paths(cur_dir)
+            files = _list_files(cur_dir)
             output_type_dir = Path(output_dir) / Path(content_type)
             output_type_dir.mkdir(exist_ok=True)
             for file in files:
-                if num_files and files_extracted >= num_files:
+                if max_files and files_extracted >= max_files:
                     break
                 filetype = os.path.splitext(file)[-1]
                 if filetype == ".json":
@@ -130,7 +136,7 @@ def extract(
                         data,
                         include_title,
                         include_authors,
-                        form,
+                        units,
                         max_per_file,
                     )
                 files_extracted += 1
@@ -143,14 +149,14 @@ def extract(
 @click.option(
     "--types",
     default="",
-    help="Which content types to extract, specify with a comma and no spaces. If nothing is selected, defaults to all available content types.",
+    help="Which content types to extract, specify with a comma and no spaces. "
+    "If nothing is selected, defaults to all available content types.",
 )
 @cli.command()
 def search(
     source: Path, output_dir: str, file_name: str, keyword: str, types: str = ""
 ) -> list:
-    """
-
+    """Search for json files with the keyword string in the source folder, deposit a text file named file_name of paths to those files in output_dir
     Given a keyword and a source folder, searches for all mentions of that keyword in the source folder, outputs a text file of paths
     Parameters
     ----------
@@ -177,7 +183,7 @@ def search(
         Path(output_dir) / Path(file_name).with_suffix(".txt"), "w", encoding="utf8"
     ) as text:
         for content_type in content_types:
-            files = _file_paths(Path(source) / Path(content_type))
+            files = _list_files(Path(source) / Path(content_type))
             for file in files:
                 filetype = file.suffix
                 if filetype == ".json":
@@ -188,14 +194,11 @@ def search(
     return relevant
 
 
-def _keywords_and_authors(input_dir: Path) -> tuple:
-    """
-    Returns a tuple of the lists of all keywords. authors in input_dir
-    :param input_dir: The dir to search through
-    """
-    files = _file_paths(input_dir)
-    keywords: Counter = Counter()
-    authors: Counter = Counter()
+def _keywords_and_authors(input_dir: Path) -> Tuple[Counter[str], Counter[str]]:
+    """Return a tuple of the lists of all keywords. authors in input_dir"""
+    files = _list_files(input_dir)
+    keywords: Counter[str] = Counter()
+    authors: Counter[str] = Counter()
     for file in files:
         filetype = os.path.splitext(file)[-1]
         if filetype == ".json":
@@ -209,7 +212,7 @@ def _keywords_and_authors(input_dir: Path) -> tuple:
 
 
 def _extract_filtered(
-    form: str,
+    units: str,
     source: Path,
     output_dir: Path,
     num_files: int,
@@ -218,9 +221,7 @@ def _extract_filtered(
     include_authors: bool,
     content_type: str = "",
 ) -> None:
-    """
-    This is a helper function for extract, it only acts when there is a filter file input for source.
-    """
+    """This is a helper function for extract, it only acts when there is a filter file input for source."""
     os.makedirs(output_dir, exist_ok=True)
     num_extracted = 0
     with open(source, encoding="utf8") as f:
@@ -236,16 +237,14 @@ def _extract_filtered(
                 data,
                 include_title,
                 include_authors,
-                form,
+                units,
                 max_per_file,
             )
             num_extracted += 1
 
 
 def _read_json(filename: Path) -> dict:
-    """
-    Reads a json file, outputting a dictionary-like of the information about the object
-    """
+    """Reads a json file, outputting a dictionary-like of the information about the object"""
     with open(filename, "r", encoding="utf8") as read_file:
         data = json.load(read_file)
     return data
@@ -257,12 +256,10 @@ def _make_text_file(
     data: dict,
     include_title: bool,
     include_authors: bool,
-    form: str,
+    units: str,
     max_per_file: int,
 ) -> None:
-    """
-    Makes and populates the text files from calling extract.
-    """
+    """Makes and populates the text files from calling extract."""
     filename_txt = Path(data["filename"]).with_suffix(".txt")
     # If the content type isn't specified, read it from the JSON
     if not content_type:
@@ -292,59 +289,72 @@ def _make_text_file(
         if print_title or print_authors:
             print(file=text_file)
 
-        if form == "token":
-            if not processed:
-                # Check the first document for tokenization, if available on the first document it should be consistent across the language.
-                if "tokens" not in data.keys():
-                    raise ValueError("Tokenization is not available for this language.")
-            for paragraph in data["tokens"]:
-                # The token field is composed of lists representing paragraphs composed of lists representing sentences.
+        if units == UNIT_TOKENS:
+            # Some files don't have tokenization. This should be consistent within a language, so
+            # if there aren't tokens, we should crash and explain to the user.
+            try:
+                tokens = data["tokens"]
+            except KeyError:
+                raise ValueError(
+                    f"Tokens not present in source for file {filename_txt}. "
+                    "The most likely cause is that you have requested tokens for a language that "
+                    "does not have tokenization."
+                )
+            for paragraph in tokens:
+                # The token field is composed of lists representing paragraphs composed of lists
+                # representing sentences.
                 for sentence in paragraph:
                     print(" ".join(sentence), file=text_file)
                     processed += 1
                     if max_per_file and processed >= max_per_file:
                         return
+                # Blank line between paragraphs
                 print(file=text_file)
-        elif form == "sentence":
+        elif units == UNIT_SENTENCES:
+            # TODO: Handle not having sentences
             for paragraph in data["sentences"]:
-                # The sentence field is composed of lists representing paragraphs containing lists representing sentences.
+                # The sentence field is composed of lists representing paragraphs containing lists
+                # representing sentences.
                 for sentence in paragraph:
                     print(sentence, file=text_file)
                     processed += 1
                     if max_per_file and processed >= max_per_file:
                         return
+                # Blank line between paragraphs
                 print(file=text_file)
-        elif form == "paragraph":
+        elif units == UNIT_PARAGRAPHS:
             for paragraph in data["paragraphs"]:
                 # The paragraph field is composed of lists representing paragraphs
                 print(paragraph, file=text_file)
+                # Blank line between paragraphs
                 print(file=text_file)
                 processed += 1
                 if max_per_file and processed >= max_per_file:
                     return
         else:
-            raise ValueError(f"Unknown form: {form}, please choose from [paragraph | sentence | token]")
+            raise ValueError(f"Unknown unit {units}, valid values are {VALID_UNITS}")
 
 
 def _parse_types(types: str, source: Path) -> List[str]:
-    """
-    Given a string of types from user input and a source directory, returns either all content types that the user lists in a list, or all subdirs in the source dir
-    """
-    subdirs = [os.path.basename(filename) for filename in Path(source).iterdir()]
+    subdirs = [filename.name for filename in Path(source).iterdir()]
     if not types:
-        content_types = subdirs  # If types is left blank, we take all subdirectories of source
+        # If types is left blank, we take all subdirectories of source
+        content_types = subdirs
     else:
+        # Parse comma-separated types
         content_types = types.split(",")
         for content_type in content_types:
-            if content_type not in subdirs:
-                raise ValueError("You have selected an invalid content type.")
+            # Check against the set of recognized content types, not the actual subdirectories of
+            # the source. It's valid to ask for something that may not be in this specific
+            # directory, for example, photo in a directory that doesn't have it.
+            if content_type not in VALID_CONTENT_TYPES:
+                raise ValueError(
+                    f"Invalid content type: {content_type}, valid values are {VALID_CONTENT_TYPES}"
+                )
     return content_types
 
 
-def _file_paths(directory: Path) -> List[Path]:
-    """
-    Given a directory, gets a list of file paths from that directory
-    """
+def _list_files(directory: Path) -> List[Path]:
     return [entry for entry in directory.iterdir() if entry.is_file()]
 
 

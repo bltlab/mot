@@ -1,15 +1,22 @@
 # Multilingual Open Text (MOT)
-This is the repository for Multilingual Open Text (MOT), a project at Brandeis University. 
 
+This is the repository for Multilingual Open Text (MOT), a project of the Broadening Linguistic Technologies (BLT) Lab at Brandeis University.
 MOT was created by Chester Palen-Michel, June Kim, and Constantine Lignos.
+This work was supported by a 2021 Brandeis University Provost Research Grant.
 
 If you use the corpus please cite our [paper](https://arxiv.org/abs/2201.05609):
 ```
-@article{palen2022multilingual,
-  title={Multilingual Open Text 1.0: Public Domain News in 44 Languages},
-  author={Palen-Michel, Chester and Kim, June and Lignos, Constantine},
-  journal={arXiv preprint arXiv:2201.05609},
-  year={2022}
+@InProceedings{palenmichel-kim-lignos:2022:LREC,
+  author    = {Palen-Michel, Chester  and  Kim, June  and  Lignos, Constantine},
+  title     = {Multilingual Open Text Release 1: Public Domain News in 44 Languages},
+  booktitle      = {Proceedings of the Language Resources and Evaluation Conference},
+  month          = {June},
+  year           = {2022},
+  address        = {Marseille, France},
+  publisher      = {European Language Resources Association},
+  pages     = {2080--2089},
+  abstract  = {We present Multilingual Open Text (MOT), a new multilingual corpus containing text in 44 languages, many of which have limited existing text resources for natural language processing. The first release of the corpus contains over 2.8 million news articles and an additional 1 million short snippets (photo captions, video descriptions, etc.) published between 2001--2022 and collected from Voice of America's news websites. We describe our process for collecting, filtering, and processing the data. The source material is in the public domain, our collection is licensed using a creative commons license (CC BY 4.0), and all software used to create the corpus is released under the MIT License. The corpus will be regularly updated as additional documents are published.},
+  url       = {https://aclanthology.org/2022.lrec-1.224}
 }
 ```
 
@@ -52,15 +59,14 @@ tir,
 tur,
 ukr,
 urd,
-vie,
-yue
-.
+vie, and
+yue.
 Note just for Pashto we provide sentence splits but not yet tokenization.
 
 # Usage
 
 ## Overview
-The script mot/motext/scripts/motext.py contains two commands that assist in accessing data in the MOT corpus. These are ```search``` and ```extract```. 
+The script mot/motext/scripts/motext.py contains two commands that assist in accessing data in the MOT corpus. These are `search` and `extract`. 
 For a description of these commands, run ```motext.py --help```:
 
 ```
