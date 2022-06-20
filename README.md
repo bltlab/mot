@@ -24,50 +24,11 @@ The latest version of the MOT data can always be found at
 [our latest GitHub release](https://github.com/bltlab/mot/releases/latest).
 
 The current release contains 44 languages:
-Albanian sqi
-Amharic amh
-Armenian hye
-Azerbaijani aze
-Bambara bam
-Bangla ben
-Bosnian bos
-Burmese mya
-Cantonese yue
-Dari prs
-English eng 
-French (African) fra 
-Georgian kat
-Greek ell 
-Haitian Creole hat
-Hausa hau
-Indonesian ind
-Khmer khm
-Kinyarwanda kin
-Korean kor
-Kurdish kur
-Lao lao 
-Lingala lin 
-Macedonian mkd
-Mandarin cmn 
-Northern Ndebele nde 
-Oromo orm 
-Pashto pus 
-Persian fas 
-Portuguese (African) por
-Russian rus
-Serbian srp
-Shona sna 
-Somali som
-Spanish spa 
-Swahili swh
-Thai tha
-Tibetan bod
-Tigrinya tir
-Turkish tur
-Ukranian ukr
-Urdu urd
-Uzbek uzb 
-Vietnamese vie
+Albanian (sqi), Amharic (amh), Armenian (hye), Azerbaijani (aze), Bambara (bam), Bangla (ben), Bosnian (bos), Burmese (mya), Cantonese (yue), Dari (prs), 
+English (eng), French (fra), Georgian (kat), Greek (ell), Haitian (hat), Hausa (hau), Indonesian (ind), Khmer (khm), Kinyarwanda (kin), Korean (kor), Kurdish (kur), 
+Lao (lao), Lingala (lin), Macedonian (mkd), Mandarin (cmn), Northern (nde), Oromo (orm), Pashto (pus), Persian (fas), Portuguese (por), Russian (rus), Serbian (srp), 
+Shona (sna), Somali (som), Spanish (spa), Swahili (swh), Thai (tha), Tibetan (bod), Tigrinya (tir), Turkish (tur), Ukranian (ukr), Urdu (urd), Uzbek (uzb), and Vietnamese (vie).
+
 
 ## Release Layout
 
