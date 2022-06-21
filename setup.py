@@ -12,7 +12,7 @@ def setup_package() -> None:
 
     setup(
         name="motext",
-        version="0.2.0",
+        version="0.2.1",
         packages=find_packages(include=("motext", "motext.*")),
         # Package type information
         package_data={"motext": ["py.typed"]},
