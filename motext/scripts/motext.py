@@ -40,15 +40,13 @@ def cli() -> None:
     + "By default, all content types are extracted.",
 )
 @click.option(
-    "--include-title",
-    type=bool,
-    default=False,
+    "--include-title", is_flag=True,
+   # type=bool,
+   # default=False,
     help="whether to include the title at the top of the text file. (default: false)",
 )
 @click.option(
-    "--include-authors",
-    type=bool,
-    default=False,
+    "--include-authors", is_flag=True,
     help="whether to include the authors at the top of the text file. (default: false)",
 )
 def extract(
@@ -61,36 +59,34 @@ def extract(
     include_title: bool = False,
     include_authors: bool = False,
 ) -> None:
-    """Extract the json documents of the desired content types in the source directory into text files in the output directory.
+    """Extract json documents into text files in the output directory.\n
+    Parameters\n
+    ----------\n
+    units : string\n
+        must choose from the strings: {sentences, paragraphs, tokens} (not case sensitive), chooses how to extract the data\n
+    source : path\n
+        the directory of json files to extract from or a text file containing paths to json files extract from\n
+    output_dir : path\n
+        the name of the folder created for housing the new text files.\n
+    max_files : int, optional\n
+        the number of files to extract from\n
+    max_per_file : int, optional\n
+        the number of sentences (units is sentences or tokens) or paragraphs to extract from each file\n
+    types : string, optional\n
+        The content types to extract from.\n
+    include_title : boolean, optional\n
+        boolean value of whether to include the title at the top of each file\n
+    include_authors : boolean, optional\n
+        boolean value of whether to include the authors at the top of each file\n
 
-    Parameters
-    ----------
-    units : string
-        must choose from the strings: {sentences, paragraphs, tokens} (not case sensitive), chooses how to extract the data
-    source : path
-        the directory of json files to extract from or a text file containing paths to json files extract from
-    output_dir : path
-        the name of the folder created for housing the new text files.
-    num_files : int, optional
-        the number of files to extract from
-    max_per_file : int, optional
-        the number of sentences (units is sentences or tokens) or paragraphs to extract from each file
-    types : string, optional
-        The content types to extract from.
-    include_title : boolean, optional
-        boolean value of whether to include the title at the top of each file
-    include_authors : boolean, optional
-        boolean value of whether to include the authors at the top of each file
+    Raises\n
+    ------\n
+    Exception\n
+        Prints a message indicating that the output dir already existed on your system.\n
 
-    Raises
-    ------
-    Exception
-        Prints a message indicating that the output dir already existed on your system.
-
-    Returns
-    -------
+    Returns\n
+    -------\n
     None.
-
     """
     # Validate units
     units = units.lower()
@@ -156,24 +152,23 @@ def extract(
 def search(
     source: Path, output_dir: str, file_name: str, keyword: str, types: str = ""
 ) -> list:
-    """Search for json files with the keyword string in the source folder, deposit a text file named file_name of paths to those files in output_dir
-    Given a keyword and a source folder, searches for all mentions of that keyword in the source folder, outputs a text file of paths
-    Parameters
-    ----------
-    source : path
+    """Search for json files with the keyword string in source.\n
+    Parameters\n
+    ----------\n
+    source : path\n
         The folder to search through
-    output_dir : path
-        The folder into which the text file will be deposited
-    file_name : string
-        The name of the output text file
-    keyword : string
-        The keyword to search for
-    types : string, optional
-        Which content types to choose from for the search, defaults to all available content types.
+    output_dir : path\n
+        The folder into which the text file will be deposited\n
+    file_name : string\n
+        The name of the output text file\n
+    keyword : string\n
+        The keyword to search for\n
+    types : string, optional\n
+        Which content types to choose from for the search, defaults to all available content types.\n
 
-    Returns
-    -------
-    relevant : list
+    Returns\n
+    -------\n
+    relevant : list\n
         A list of dict-likes of all the relevant articles.
     """
 
