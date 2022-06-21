@@ -239,6 +239,9 @@ Dump documents:
 This step can be skipped if extracting from the mongo database directly.
 Skipping this saves a lot of wasted space writing to disk.
 `python extraction/dump_documents.py <outdir> <filemap> --n-processes 20`
+If including the custom models download them from [custom-ersatz-models](https://github.com/cpalenmichel/custom-ersatz-models)
+or train your own models using [Ersatz](https://github.com/rewicks/ersatz) 
+and use the flag `--custom-segmentation-dir <custom-models-dir-path>`. 
 
 Run extraction script:
 It is currently recommended without GPUs and just use a high number of cpus for extraction.
