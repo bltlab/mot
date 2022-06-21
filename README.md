@@ -119,7 +119,7 @@ Commands:
 
 The extract command takes in a folder and extracts information from the JSON files, converting into text files. a full call to this function may look like this:
 ```
-motext.py extract units source output_dir --num-files (int1) --max-per-file (int2) types article,video,photo,audio --include-title --include-authors
+motext extract units source output_dir --num-files (int1) --max-per-file (int2) types article,video,photo,audio --include-title --include-authors
 ```
 
 This will produce a new directory `output_dir` containing subdirectories `output_dir\article`, `output_dir\video` etc. Extracted files will be sorted by content type in their respective directories.
@@ -140,31 +140,31 @@ Say you would like to extract sentences from "swh_voaswahili" of all content typ
 Run the following:
 
 ```
-motext.py extract sentences swh_voaswahili output_folder --include-title --include-authors
+motext extract sentences swh_voaswahili output_folder --include-title --include-authors
 ```
 
 If instead you want one paragraph per line, run:
 
 ```
-motext.py extract paragraphs swh_voaswahili output_folder --include-title --include-authors
+motext extract paragraphs swh_voaswahili output_folder --include-title --include-authors
 ```
 
 If you only want 6 files total, run:
 
 ```
-motext.py extract sentences swh_voaswahili output_folder --num-files 6 --include-title --include-authors
+motext extract sentences swh_voaswahili output_folder --num-files 6 --include-title --include-authors
 ```
 
 If you want to constrain the number of lines per file to 7, run:
 
 ```
-motext.py extract sentences swh_voaswahili output_folder --max-per-file 7
+motext extract sentences swh_voaswahili output_folder --max-per-file 7
 ```
 
 If you want all audio and photo content, run:
 
 ```
-motext.py extract sentences swh_voaswahili output_folder --types audio,photo
+motext extract sentences swh_voaswahili output_folder --types audio,photo
 ```
 
 Note that content types are separated by a comma and no spaces.
@@ -174,7 +174,7 @@ Note that content types are separated by a comma and no spaces.
 The `source` argument of `extract` can also be a text file containing paths directly to json files. Most efficiently, this will be a text file produced by the `search` function, outlined in the **Search** section below. To use `extract` in this way, it is the same syntax as if the text file were a directory. An example of this usage is as follows:
 
 ```
-motext.py extract sentences filter_text_file.txt output_folder
+motext extract sentences filter_text_file.txt output_folder
 ```
 
 ### Search
@@ -182,7 +182,7 @@ motext.py extract sentences filter_text_file.txt output_folder
 The `search` function allows the user to produce a text file of paths to json files that are tagged by a keyword. To call `search`, run:
 
 ```
-motext.py search source output_dir filename keyword
+motext search source output_dir filename keyword
 ```
 
 Say you would like a list of all articles in swh_voaswahili that are tagged with "Afrika". 
@@ -190,7 +190,7 @@ Say you would like a list of all articles in swh_voaswahili that are tagged with
 Run:
 
 ```
-motext.py search swh_voaswahili searches_dir afrika_search Afrika
+motext search swh_voaswahili searches_dir afrika_search Afrika
 ```
 
 The list will be stored in `afrika_search.txt` in `searches_dir`. 
@@ -200,7 +200,7 @@ Now say you want to constrain the content types you are searching through to onl
 Run:
 
 ```
-motext.py search swh_voaswahili searches_dir afrika_search Afrika --types audio,video
+motext search swh_voaswahili searches_dir afrika_search Afrika --types audio,video
 ```
 
 ---
