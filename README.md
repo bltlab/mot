@@ -108,8 +108,9 @@ Options:
   --help  Show this message and exit.
 
 Commands:
-  extract  Extract the json documents of the desired content types in the...
-  search   Search for json files with the keyword string in the source...
+  extract  Extract json documents into text files in the output directory.
+  search   Search for json files with the keyword string in source.
+
 ```
 
 ### Extract
@@ -118,10 +119,10 @@ Commands:
 
 The extract command takes in a folder and extracts information from the JSON files, converting into text files. a full call to this function may look like this:
 ```
-motext.py extract units source output_dir --num-files (int1) --max-per-file (int2) types (type1,type2, etc.) --include-title (bool1) --include-authors (bool2)
+motext.py extract units source output_dir --num-files (int1) --max-per-file (int2) types article,video,photo,audio --include-title --include-authors
 ```
 
-This will produce a new directory `output_dir` containing subdirectories `output_dir\type1`, `output_dir\type2` etc. Extracted files will be sorted by content type in their respective directories.
+This will produce a new directory `output_dir` containing subdirectories `output_dir\article`, `output_dir\video` etc. Extracted files will be sorted by content type in their respective directories.
 
 The arguments are as follows:
 
@@ -139,19 +140,19 @@ Say you would like to extract sentences from "swh_voaswahili" of all content typ
 Run the following:
 
 ```
-motext.py extract sentences swh_voaswahili output_folder --include-title True --include-authors True
+motext.py extract sentences swh_voaswahili output_folder --include-title --include-authors
 ```
 
 If instead you want one paragraph per line, run:
 
 ```
-motext.py extract paragraphs swh_voaswahili output_folder --include-title True --include-authors True
+motext.py extract paragraphs swh_voaswahili output_folder --include-title --include-authors
 ```
 
 If you only want 6 files total, run:
 
 ```
-motext.py extract sentences swh_voaswahili output_folder --num-files 6 --include-title True --include-authors True
+motext.py extract sentences swh_voaswahili output_folder --num-files 6 --include-title --include-authors
 ```
 
 If you want to constrain the number of lines per file to 7, run:
