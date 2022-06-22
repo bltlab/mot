@@ -99,7 +99,7 @@ The `motext` script contains two commands that assist in accessing data in the M
 
 To install `motext`, run `pip install motext`. (If you are working with a clone of the repository and want to make changes to `motext`, you can run `pip install -e .` from the root of the clone.)
 
-Currently, two subcommands are supported by this script: `search` and `extract`. For a description of these commands, run `motext --help`:
+Currently, two commands are supported by this script: `search` and `extract`. For a description of these commands, run `motext --help`:
 
 ```
 Usage: motext [OPTIONS] COMMAND [ARGS]...
@@ -117,30 +117,33 @@ Commands:
 
 #### Extracting given a source directory
 
-The extract command takes in a folder and extracts information from the JSON files, converting into text files. a full call to this function may look like this:
+The extract command takes in a folder and extracts text from the JSON files within it.
+
+For example, let's say you have downloaded and decompressed the data so you have the [VOA Zimbabwe site](https://www.voazimbabwe.com/) data located at `release/eng_voazimbabwe`. You want to extract the text of the news articles to `text/eng_voazimbabwe`, with each line containing space-separated tokens. You would run:
+
 ```
-motext extract units source output_dir --num-files (int1) --max-per-file (int2) types article,video,photo,audio --include-title --include-authors
+motext extract sentences release/eng_voazimbabwe text/eng_voazimbabwe --types article
 ```
 
-This will produce a new directory `output_dir` containing subdirectories `output_dir\article`, `output_dir\video` etc. Extracted files will be sorted by content type in their respective directories.
+This will produce a new directory `text/eng_voazimbabwe` containing an `article` subdirectory, just like in the source data. Extracted files will be sorted by content type in their respective directories.
 
 The arguments are as follows:
 
-* `units`: choose from [sentences, tokens, paragraphs]. Extract will print one sentence/paragraph per line or a sentence of tokens per line.
-* `source`: this is the source directory from which data will be extracted (ex: swh_voaswahili)
+* `units`: Choose from [sentences, tokens, paragraphs]. Extract will print one sentence/paragraph per line or a sentence of space-separated tokens per line.
+* `source`: This is the source directory from which data will be extracted.
 * `output_dir`: This is the folder to which you would like the data extracted. If output_dir does not exist, a new directory will be created.
-* `(optional) num-files`: The total number of files to extract from source.
-* `(optional) max-per-file`: The max number of units to extract per file (the first max-per-file units will be extracted)
-* `(optional) types`: The content types to extract from the source directory (ex: article,audio). By default will take all available. Input with commas and no spaces.
-* `(optional) include-title`: Whether to include the title at the top of each document on its own line
-* `(optional) include-authors`: Whether to include authors below the title, each on their own line. 
+* (optional) `--num-files N`: The maximum number of files to extract from source.
+* (optional) `--max-per-file N`: Allows controlling the maximum length of each extracted file. If extracting paragraphs, this limits the number of paragraphs; if extracting sentences or tokenized sentences, this limits the number of sentences.
+* (optional) `--types type1,type2`: The content types to extract from the source directory (choose from `article`, `audio`, `video`, and `photo`). By default, all available content types will be used. Select multiple types by separating with a comma, for example `--types article,audio`.
+* (optional) `--include-title`: Whether to include the title at the top of each document on its own line.
+* (optional) `--include-authors`: Whether to include authors below the title, each on their own line.
 
-Say you would like to extract sentences from "swh_voaswahili" of all content types (this will include article, audio, video, and photo) to the directory "output_folder" including titles and authors. 
+Say you would like to extract sentences from `swh_voaswahili` of all content types (this will include article, audio, video, and photo) to the directory `output_folder` including titles and authors.
 
 Run the following:
 
 ```
-motext extract sentences swh_voaswahili output_folder --include-title --include-authors
+motext extract tokens swh_voaswahili output_folder --include-title --include-authors
 ```
 
 If instead you want one paragraph per line, run:
@@ -155,7 +158,7 @@ If you only want 6 files total, run:
 motext extract sentences swh_voaswahili output_folder --num-files 6 --include-title --include-authors
 ```
 
-If you want to constrain the number of lines per file to 7, run:
+If you want to constrain the number of sentences per file to 7, run:
 
 ```
 motext extract sentences swh_voaswahili output_folder --max-per-file 7
