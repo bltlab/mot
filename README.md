@@ -23,6 +23,8 @@ If you use the corpus please cite [our LREC 2022 paper](https://arxiv.org/abs/22
 The latest version of the MOT data can always be found at
 [our latest GitHub release](https://github.com/bltlab/mot/releases/latest).
 
+## Languages
+
 The current release contains 44 languages: Albanian (sqi), Amharic (amh), Armenian (hye), Azerbaijani (aze), Bambara (bam), Bangla (ben), Bosnian (bos), Burmese (mya), Cantonese (yue), Dari (prs), English (eng), French (fra), Georgian (kat), Greek (ell), Haitian Creole (hat), Hausa (hau), Indonesian (ind), Khmer (khm), Kinyarwanda (kin), Korean (kor), Kurdish (kur), Lao (lao), Lingala (lin), Macedonian (mkd), Mandarin (cmn), Northern (nde), Oromo (orm), Pashto (pus), Persian (fas), Portuguese (por), Russian (rus), Serbian (srp), Shona (sna), Somali (som), Spanish (spa), Swahili (swh), Thai (tha), Tibetan (bod), Tigrinya (tir), Turkish (tur), Ukranian (ukr), Urdu (urd), Uzbek (uzb), and Vietnamese (vie).
 
 
@@ -44,11 +46,11 @@ If you don't have the GitHub CLI available, run `download_latest_relase.sh` inst
 
 Both of the download scripts place compressed files (one per site) in the `release` directory. To decompress the downloaded files, run `decompress_latest_release.sh`.
 
-### Sentence Segmentation and Tokenization
+## Sentence Segmentation and Tokenization
 
 Each JSON document in the release has `paragraphs` and `n_paragraphs` fields. These contain the text of each website divided by paragraphs and the number of paragraphs, respectively.  For the languages where we provide sentence segmentation and  tokenization, the fields `sentences`, `n_sentences`, `tokens`, and `n_tokens` are also provided.
 
-We are in the process of expanding the languages for which we provide sentence segmentation and tokenization. We currently provide both sentence segmentation and tokenization in the following languages (by ISO 639-3 code):
+We currently provide both sentence segmentation and tokenization in the following languages (by ISO 639-3 code):
 amh,
 cmn,
 ell,
@@ -90,6 +92,12 @@ som,
 sqi,
 swh, and
 uzb.
+
+We currently do not support sentence segmentation or tokenization for the following languages (but we're working on it):
+ben,
+bod,
+kat, and
+kur.
 
 # Working with the Data
 
