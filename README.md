@@ -40,9 +40,9 @@ All command-line instructions in this section require the `bash` shell and cloni
 
 We have provided two scripts to help download and decompress all the data. Since they download all sites (currently 5.6GB compressed), they take a while to run. If you only want a handful of sites, it's probably easiest to download them manually.
 
-The fastest way to download the data is to set up [the GitHub CLI](https://cli.github.com/), which allows for much faster release downloads. Once you have set it up, run `gh_download_latest_relase.sh`.
+The fastest way to download the data is to set up [the GitHub CLI](https://cli.github.com/), which allows for much faster release downloads. Once you have set it up, run `gh_download_latest_release.sh`.
 
-If you don't have the GitHub CLI available, run `download_latest_relase.sh` instead.
+If you don't have the GitHub CLI available, run `download_latest_release.sh` instead.
 
 Both of the download scripts place compressed files (one per site) in the `release` directory. To decompress the downloaded files, run `decompress_latest_release.sh`.
 
