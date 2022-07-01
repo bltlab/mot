@@ -186,6 +186,18 @@ def write_removed_paragraphs(
             print(f"{num}\t{prob}\t{prop}\t{clean_paragraph}", file=outfile)
 
 
+def get_authors_from_html(soup: Any, ld_json: Dict) -> List[str]:
+    """
+    Checks for authors in the html meta data, then tries to get them from ld_json.
+    """
+    authors = soup.find_all("meta", {"name": "Author"})
+    author_list = [author["content"] for author in authors]
+    if not author_list:
+        author_dict = ld_json.get("author", {})
+        author_list = [author_dict.get("name", None)]
+    return author_list
+
+
 def extract_document(
     json_doc: Dict,
     outdir: str,
@@ -224,11 +236,16 @@ def extract_document(
         scraped_timestamp = json_doc.get("time_retrieved")
         authors = json_doc.get("authors")
         keywords = json_doc.get("keywords", [])
-
+        parallel = json_doc.get("parallel_url")
+        application_ld_json = json_doc.get("application_ld_json", {})
         soup = BeautifulSoup(html, "html.parser")
         title = soup.title.getText()
         if iso == "kor":
             title = title.strip("| Voice of America - Korean")
+
+        if not authors:
+            # If authors not retrieved at scraping stage, get them from wherever we can
+           authors = get_authors_from_html(soup, application_ld_json)
 
         paragraphs = extract_text(soup, iso)
         if iso == "eng":
@@ -242,7 +259,6 @@ def extract_document(
         n_paragraphs = len(filtered_paragraphs)
         n_chars = sum(len(char) for char in filtered_paragraphs)
 
-        parallel = None
         # Field contains parallel articles for LAO, but holds unneeded text in other languages
         if iso == "lao":
             for p in soup.find_all("a", class_="wsw__a", href=True):
@@ -322,7 +338,7 @@ def extract_document(
             paragraphs=filtered_paragraphs,
             n_paragraphs=n_paragraphs,
             n_chars=n_chars,
-            parallel_english_article=parallel,
+            parallel_article=parallel,
             # Be generous in showing what languages CLD3 picked up
             cld3_detected_languages=cld3_detected_languages,
             predicted_language=predicted_language,
