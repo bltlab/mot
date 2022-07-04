@@ -21,7 +21,7 @@ from typing import (
     Tuple,
     Union,
 )
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString, Tag
 import cld3
 import pycountry
 from spacy.tokenizer import Tokenizer
@@ -32,6 +32,7 @@ from extraction.dump_documents import (
     languages_from_filemap,
     create_date_query,
 )
+from extraction.scraper import extract_ld_json
 from extraction.segmentation import Segmenter, setup_segmenter, SEGMENTABLE_LANGUAGES
 from extraction.tokenization import setup_tokenizer, TOKENIZABLE_LANGUAGES
 
@@ -186,15 +187,24 @@ def write_removed_paragraphs(
             print(f"{num}\t{prob}\t{prop}\t{clean_paragraph}", file=outfile)
 
 
-def get_authors_from_html(soup: Any, ld_json: Dict) -> List[str]:
+def get_authors_from_html(soup: Any, ld_json: Dict, utag_data: Dict) -> List[str]:
     """
     Checks for authors in the html meta data, then tries to get them from ld_json.
     """
     authors = soup.find_all("meta", {"name": "Author"})
-    author_list = [author["content"] for author in authors]
+    author_list = [author["content"] for author in authors if author["content"]]
     if not author_list:
+        author_string = utag_data.get("byline", None)
+        if author_string:
+            return [author.strip() for author in author_string.split(",")]
+    if not author_list and ld_json:
         author_dict = ld_json.get("author", {})
-        author_list = [author_dict.get("name", None)]
+        # Possible there's at least one article that does this directly to a list
+        if type(author_dict) == list:
+            return author_dict
+        author_string = author_dict.get("name", None)
+        if author_string:
+            return [author.strip() for author in author_string.split(",")]
     return author_list
 
 
@@ -243,9 +253,13 @@ def extract_document(
         if iso == "kor":
             title = title.strip("| Voice of America - Korean")
 
+        if not application_ld_json:
+            ld_scripts = soup.find_all("script", {"type": "application/ld+json"})
+            application_ld_json = extract_ld_json(ld_scripts)
+
         if not authors:
             # If authors not retrieved at scraping stage, get them from wherever we can
-           authors = get_authors_from_html(soup, application_ld_json)
+           authors = get_authors_from_html(soup, application_ld_json, utag_data)
 
         paragraphs = extract_text(soup, iso)
         if iso == "eng":
@@ -514,22 +528,44 @@ def extract_text(soup, iso) -> List[str]:
             text.extend(text_article)
         else:
             for p in p_tag:
-                split_p = p.getText().split("\n")
+                # split_p = p.getText().split("\n")
+                split_p = []
+                text_pieces = []
+                for child in p.children:
+                    if type(child) is NavigableString:
+                        text_pieces.extend(child.split("\n"))
+                    elif child.name == "br":
+                        split_p.append("".join(text_pieces))
+                        text_pieces = []
+                # Remaining pieces
+                if text_pieces:
+                    split_p.append("".join(text_pieces))
                 text_article = [
                     article_paragraph
                     for s in split_p
-                    if is_valid(article_paragraph := s.strip() and s.strip())
+                    if is_valid(article_paragraph := s.strip()) and s.strip()
                 ]
                 text.extend(text_article)
 
         if not p_tag:
             wsw_class = a.find_all("div", class_="wsw")
             for w in wsw_class:
-                split_w = w.getText().split("\n")
+                split_w = []
+                text_pieces = []
+                for child in w.children:
+                    if type(child) is NavigableString:
+                        text_pieces.extend(child.split("\n"))
+                    elif child.name == "br":
+                        split_w.append("".join(text_pieces))
+                        text_pieces = []
+                # Remaining pieces
+                if text_pieces:
+                    split_w.append("".join(text_pieces))
+
                 text_article = [
                     paragraph_text
                     for s in split_w
-                    if is_valid(paragraph_text := s.strip() and s.strip())
+                    if is_valid(paragraph_text := s.strip()) and s.strip()
                 ]
                 text.extend(text_article)
 
@@ -537,12 +573,21 @@ def extract_text(soup, iso) -> List[str]:
     for a in article2:
         p_tag = a.find_all("p")
         for p in p_tag:
-            split_p = p.getText(strip=True).split("\n")
+            split_p = []
+            text_pieces = []
+            for child in p.children:
+                if type(child) is NavigableString:
+                    text_pieces.extend(child.split("\n"))
+                elif child.name == "br":
+                    split_p.append("".join(text_pieces))
+                    text_pieces = []
+            # Remaining pieces
+            if text_pieces:
+                split_p.append("".join(text_pieces))
             text_article = [
                 paragraph for s in split_p if is_valid(paragraph := s.strip())
             ]
             text.extend(text_article)
-
     return text
 
 
