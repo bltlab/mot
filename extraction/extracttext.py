@@ -4,15 +4,14 @@ Script to extract text from json dumped scrapes from scrapes mongodb.
 """
 import os
 import json
+import time
 import urllib.parse
-from datetime import datetime
 
 import click
 from torch import multiprocessing
 from torch.multiprocessing import JoinableQueue, Process
 from typing import (
     Generator,
-    NamedTuple,
     List,
     Dict,
     Sequence,
@@ -810,6 +809,9 @@ def fromdb(
         port=port,
         date_query=date_query,
     )
+    print("All documents queried and added to the queue")
+    queue.join()
+    print("All queue tasks complete")
 
 
 if __name__ == "__main__":
