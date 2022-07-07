@@ -25,6 +25,7 @@ def update_fields():
     parser.add_argument(
         "--update-iso", action="store_true", help="Update iso for a language"
     )
+    parser.add_argument("--update-lang-by-sitename", help="Update all the language and iso for a sitename")
     parser.add_argument(
         "--update-metadata",
         action="store_true",
@@ -41,6 +42,11 @@ def update_fields():
     args = parser.parse_args()
 
     # TODO number of arguments is becoming too much, consider click style args or separate scripts
+    if args.update_lang_by_sitename and not (args.language_code and args.language):
+        raise ValueError(
+            "Must specify language and language code when updating by language by sitename"
+        )
+
 
     if args.update_utag and args.language_code:
         print(f"Updating utag for {args.language_code}")
@@ -58,6 +64,19 @@ def update_fields():
                 "$set": {
                     "iso": args.language_code,
                     "sitemap_prov.sitemap.iso": args.language_code,
+                }
+            },
+        )
+    elif args.update_lang_by_sitename and args.language_code and args.language:
+        sitemap_collection = get_sitemap_collection()
+        sitemap_collection.update_many(
+            {"sitemap_prov.sitemap.site_name": args.update_lang_by_sitename},
+            {
+                "$set": {
+                    "iso": args.language_code,
+                    "language": args.language,
+                    "sitemap_prov.sitemap.iso": args.language_code,
+                    "sitemap_prov.sitemap.language": args.language,
                 }
             },
         )
