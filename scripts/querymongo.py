@@ -2,7 +2,6 @@
 Quick script to query mongo documents.
 """
 from argparse import ArgumentParser
-from datetime import datetime
 from typing import Sequence
 
 from pymongo import MongoClient
