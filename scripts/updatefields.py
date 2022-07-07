@@ -25,7 +25,10 @@ def update_fields():
     parser.add_argument(
         "--update-iso", action="store_true", help="Update iso for a language"
     )
-    parser.add_argument("--update-lang-by-sitename", help="Update all the language and iso for a sitename")
+    parser.add_argument(
+        "--update-lang-by-sitename",
+        help="Update all the language and iso for a sitename",
+    )
     parser.add_argument(
         "--update-metadata",
         action="store_true",
@@ -46,7 +49,6 @@ def update_fields():
         raise ValueError(
             "Must specify language and language code when updating by language by sitename"
         )
-
 
     if args.update_utag and args.language_code:
         print(f"Updating utag for {args.language_code}")

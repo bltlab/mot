@@ -14,7 +14,9 @@ def open_and_insert(filepaths: Sequence[str], port=27200) -> None:
     for filepath in filepaths:
         with open(filepath, "r", encoding="utf8") as f:
             doc = json.load(f)
-            doc["date_published"] = datetime.strptime(doc["date_published"], "%Y-%m-%dT%H:%M:%S")
+            doc["date_published"] = datetime.strptime(
+                doc["date_published"], "%Y-%m-%dT%H:%M:%S"
+            )
         docs_to_insert.append(doc)
         if len(docs_to_insert) >= 100:
             collection.insert_many(docs_to_insert)

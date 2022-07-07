@@ -27,7 +27,13 @@ class Document(NamedTuple):
 
     def to_dict(self):
         dictionary = self._asdict()
-        for field in ("parallel_article", "sentences", "tokens", "n_tokens", "n_sentences"):
+        for field in (
+            "parallel_article",
+            "sentences",
+            "tokens",
+            "n_tokens",
+            "n_sentences",
+        ):
             if not dictionary[field]:
                 del dictionary[field]
         return dictionary

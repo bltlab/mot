@@ -49,10 +49,7 @@ class CharacterCounter:
         sns.barplot(
             data=df.reset_index(), x="Language", y="Character Count", color="#69b3a2"
         )
-        plt.xticks(
-            rotation=90,
-            horizontalalignment="center"
-        )
+        plt.xticks(rotation=90, horizontalalignment="center")
         plt.tight_layout()
         plt.autoscale()
         plt.savefig("character_count.png", dpi=200)
@@ -79,14 +76,16 @@ def run() -> None:
             else:
                 with Pool(args.n_workers) as pool:
                     for n_chars in pool.imap_unordered(
-                        count_chars, read_articles(os.path.join(root, file)), chunksize=100
+                        count_chars,
+                        read_articles(os.path.join(root, file)),
+                        chunksize=100,
                     ):
                         counter.count(language, n_chars)
     counter.histogram()
 
 
 def read_articles(inputfile: str) -> Generator[str, None, None]:
-    with open(inputfile, 'r', encoding='utf8') as infile:
+    with open(inputfile, "r", encoding="utf8") as infile:
         for line in infile:
             yield line
 

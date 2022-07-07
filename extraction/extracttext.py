@@ -258,7 +258,7 @@ def extract_document(
 
         if not authors:
             # If authors not retrieved at scraping stage, get them from wherever we can
-           authors = get_authors_from_html(soup, application_ld_json, utag_data)
+            authors = get_authors_from_html(soup, application_ld_json, utag_data)
 
         paragraphs = extract_text(soup, iso)
         if iso == "eng":

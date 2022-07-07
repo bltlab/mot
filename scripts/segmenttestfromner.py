@@ -21,7 +21,7 @@ PUNCTUATION = {
 
 def write_sents(sents: List[str], outpath: str, newline=False):
     end = "\n" if newline else " "
-    with open(outpath, 'w', encoding='utf8') as outfile:
+    with open(outpath, "w", encoding="utf8") as outfile:
         for sent in sents:
             print(sent, file=outfile, end=end)
 
@@ -40,7 +40,7 @@ def segmenttestfromner():
 def read_sents(inpath: str):
     sents = []
     tokens = []
-    with open(inpath, 'r', encoding='utf8') as infile:
+    with open(inpath, "r", encoding="utf8") as infile:
         for line in infile:
             fields = line.strip().split()
             token = fields[0] if fields else None
