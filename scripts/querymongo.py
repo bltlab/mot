@@ -2,7 +2,6 @@
 Quick script to query mongo documents.
 """
 from argparse import ArgumentParser
-from datetime import datetime
 from typing import Sequence
 
 from pymongo import MongoClient
@@ -106,8 +105,8 @@ def query():
     parser.add_argument("--single-doc", action="store_true")
     parser.add_argument("--archive-counts", action="store_true")
     parser.add_argument("--query-by-date", action="store_true")
-    parser.add_argument("--start-date", help="%Y-%m-%d")
-    parser.add_argument("--end-date", help="%Y-%m-%d")
+    parser.add_argument("--start-date", help="Y-m-d")
+    parser.add_argument("--end-date", help="Y-m-d")
     args = parser.parse_args()
 
     client = MongoClient(port=args.port)

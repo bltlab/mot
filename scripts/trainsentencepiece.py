@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 
 import sentencepiece as spm
 
+
 def train_sentence_piece():
     parser = ArgumentParser(description=__doc__)
     parser.add_argument("input_text")
@@ -17,9 +18,13 @@ def train_sentence_piece():
     parser.add_argument("--eos-piece", default="</s>")
     args = parser.parse_args()
     spm.SentencePieceTrainer.train(
-        input=args.input_text, model_prefix=args.prefix, vocab_size=args.vocab_size,
-        bos_piece=args.bos_piece, eos_piece=args.eos_piece, character_coverage=args.character_coverage,
-        model_type=args.model_type
+        input=args.input_text,
+        model_prefix=args.prefix,
+        vocab_size=args.vocab_size,
+        bos_piece=args.bos_piece,
+        eos_piece=args.eos_piece,
+        character_coverage=args.character_coverage,
+        model_type=args.model_type,
     )
 
 

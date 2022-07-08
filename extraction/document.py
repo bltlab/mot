@@ -15,7 +15,7 @@ class Document(NamedTuple):
     paragraphs: List[str]
     n_paragraphs: int
     n_chars: int
-    parallel_english_article: Optional[str]
+    parallel_article: Optional[str]
     cld3_detected_languages: Dict[str, Dict[str, Union[float, str]]]
     predicted_language: str
     sentences: Optional[List[List[str]]]
@@ -27,12 +27,15 @@ class Document(NamedTuple):
 
     def to_dict(self):
         dictionary = self._asdict()
-        if not dictionary["parallel_english_article"]:
-            del dictionary["parallel_english_article"]
-        if not dictionary["sentences"]:
-            del dictionary["sentences"]
-        if not dictionary["tokens"]:
-            del dictionary["tokens"]
+        for field in (
+            "parallel_article",
+            "sentences",
+            "tokens",
+            "n_tokens",
+            "n_sentences",
+        ):
+            if not dictionary[field]:
+                del dictionary[field]
         return dictionary
 
     def update_filename(self, new_filename: str) -> "Document":
@@ -54,7 +57,7 @@ class Document(NamedTuple):
             paragraphs=self.paragraphs,
             n_paragraphs=self.n_paragraphs,
             n_chars=self.n_chars,
-            parallel_english_article=self.parallel_english_article,
+            parallel_article=self.parallel_article,
             cld3_detected_languages=self.cld3_detected_languages,
             predicted_language=self.predicted_language,
             sentences=self.sentences,
@@ -84,7 +87,7 @@ class Document(NamedTuple):
             paragraphs=d.get("paragraphs", []),
             n_paragraphs=d["n_paragraphs"],
             n_chars=d["n_chars"],
-            parallel_english_article=d.get("parallel_english_article", None),
+            parallel_article=d.get("parallel_article", None),
             cld3_detected_languages=d["cld3_detected_languages"],
             predicted_language=d["predicted_language"],
             sentences=d.get("sentences", None),

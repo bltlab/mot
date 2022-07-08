@@ -42,7 +42,6 @@ SEGMENTABLE_LANGUAGES = {
     "ukr",
     "urd",
     "vie",
-    "yue",
 }
 
 
@@ -277,8 +276,6 @@ class ErsatzSegmenter(Segmenter):
         elif iso == "tur":
             model_path = get_model_path("tr")
         elif iso == "cmn":
-            model_path = get_model_path("zh")
-        elif iso == "yue":
             model_path = get_model_path("zh")
         elif iso in CUSTOM_ERSATZ_MODELS:
             model_path = f"{custom_model_dir}/{iso}.checkpoint.model"

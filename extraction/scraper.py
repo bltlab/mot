@@ -382,14 +382,20 @@ async def insert_page(
     document["time_retrieved"] = page_result.time_retrieved
     document["error_message"] = page_result.error_message
     if page_result.success and document.get("canonical_link"):
-        existing_docids = [
-            doc["_id"]
-            for doc in collection.find({"canonical_link": document["canonical_link"]})
-        ]
-        existing_docids.extend(
-            [doc["_id"] for doc in collection.find({"url": document["url"]})]
-        )
-        existing_docids = list(set(existing_docids))
+        existing_docids_in_language = []
+        parallel_url = None
+        for doc in collection.find({"canonical_link": document["canonical_link"]}):
+            if doc["iso"] == document["iso"]:
+                existing_docids_in_language.append(doc["_id"])
+            elif doc["latest"]:
+                parallel_url = doc["url"]
+        for doc in collection.find({"url": document["url"]}):
+            if doc["iso"] == document["iso"]:
+                existing_docids_in_language.append(doc["_id"])
+            elif doc["latest"]:
+                parallel_url = doc["url"]
+        document["parallel_url"] = parallel_url
+        existing_docids = list(set(existing_docids_in_language))
         if existing_docids and document["success"]:
             # Collision of canonical links, check and set latest if not an error
             document["latest"] = True

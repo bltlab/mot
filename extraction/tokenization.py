@@ -44,7 +44,6 @@ TOKENIZABLE_LANGUAGES = {
     "ukr",
     "urd",
     "vie",
-    "yue",
 }
 
 
@@ -197,13 +196,6 @@ class SpacyTokenizer(BaseTokenizer):
             # Weirdness in spacy type hints
             zh_nlp.tokenizer.initialize(pkuseg_model="mixed")  # type: ignore
             self.tokenizer = zh_nlp.tokenizer
-        elif lang_code == "yue":
-            zh_nlp = Chinese.from_config(
-                {"nlp": {"tokenizer": {"segmenter": "pkuseg"}}}
-            )
-            # Weirdness in spacy type hints
-            zh_nlp.tokenizer.initialize(pkuseg_model="mixed")  # type: ignore
-            self.tokenizer = zh_nlp.tokenizer
         elif lang_code == "fra":
             self.tokenizer = French().tokenizer
         elif lang_code == "spa":
@@ -225,8 +217,6 @@ def setup_tokenizer(iso: str = "xx") -> BaseTokenizer:
         return SpacyTokenizer("eng")
     elif iso == "cmn":
         return SpacyTokenizer("cmn")
-    elif iso == "yue":
-        return SpacyTokenizer("yue")
     elif iso == "fra":
         return SpacyTokenizer("fra")
     elif iso == "spa":

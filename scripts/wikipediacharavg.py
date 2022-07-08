@@ -59,10 +59,7 @@ class CharacterAverage:
         sns.barplot(
             data=df.reset_index(), x="Language", y="Mean Character", color="#69b3a2"
         )
-        plt.xticks(
-            rotation=90,
-            horizontalalignment="center"
-        )
+        plt.xticks(rotation=90, horizontalalignment="center")
         plt.tight_layout()
         plt.autoscale()
         plt.savefig("character_average.png", dpi=200)
@@ -70,7 +67,7 @@ class CharacterAverage:
 
 
 def read_articles(inputfile: str) -> Generator[str, None, None]:
-    with open(inputfile, 'r', encoding='utf8') as infile:
+    with open(inputfile, "r", encoding="utf8") as infile:
         for line in infile:
             yield line
 
@@ -96,7 +93,9 @@ def run() -> None:
             else:
                 with Pool(args.n_workers) as pool:
                     for n_chars in pool.imap_unordered(
-                        average_chars, read_articles(os.path.join(root, file)), chunksize=100
+                        average_chars,
+                        read_articles(os.path.join(root, file)),
+                        chunksize=100,
                     ):
                         counter.count(language, n_chars)
 
