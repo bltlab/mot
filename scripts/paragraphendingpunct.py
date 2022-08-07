@@ -20,9 +20,9 @@ def find_ending_punctuation():
             ending_char = line.strip()[-1]
             char_counter[ending_char] += 1
 
-    print(f"{'Char':7s} {'Unicode':9s} {'Count':5s}")
+    print(f"{'Char':7s} {'Unicode':9s} {'Count': =5d}")
     for char, count in char_counter.most_common():
-        print(f"{char:7s} {ord(char):9s} {count:5.0f}")
+        print(f"{char:7s} {ord(char): =9d} {count: =5d}")
 
 
 if __name__ == "__main__":
