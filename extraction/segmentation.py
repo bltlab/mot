@@ -47,10 +47,14 @@ SEGMENTABLE_LANGUAGES = {
 
 CUSTOM_ERSATZ_MODELS = {
     "aze",
+    "ben",
+    "bod",
     "bos",
     "hat",
     "hau",
+    "kat",
     "kin",
+    "kur",
     "lin",
     "mkd",
     "nde",
