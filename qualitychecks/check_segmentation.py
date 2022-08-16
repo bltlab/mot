@@ -7,6 +7,7 @@ import os
 import json
 from argparse import ArgumentParser
 from collections import defaultdict, Counter
+from functools import partial
 from heapq import heappushpop
 from multiprocessing import Pool
 from typing import Generator, NamedTuple, Dict, Optional, List, Tuple
@@ -71,23 +72,39 @@ class SentenceCounter:
                 outfile.write(html_template.replace("*INSERT_CONTENT_HERE*", content))
 
     def process_result(self, result: Result):
-        if result.segmentation_rate is not None:
-            self.segmentation_rate_sum_by_lang[result.iso] += result.segmentation_rate
         if result.is_article:
-            self.article_count_by_lang[result.iso] += 1
-        if result.is_segmented:
-            self.num_segmented[result.iso] += 1
-        else:
-            self.num_unsegmented[result.iso] += 1
-
-        self.likely_bad_splits[result.iso] += result.sentence_endings
-
-        for length, sent in result.sents_by_length.items():
-            if len(self.longest_sents[result.iso]) < self.top_k_longest:
-                self.longest_sents[result.iso].append((length, sent))
+            if result.segmentation_rate is not None:
+                self.segmentation_rate_sum_by_lang[result.iso] += result.segmentation_rate
+            if result.is_segmented:
+                self.num_segmented[result.iso] += 1
             else:
-                heappushpop(self.longest_sents[result.iso], (length, sent))
-            self.sentence_lengths_frequency[result.iso][length] += 1
+                self.num_unsegmented[result.iso] += 1
+            self.article_count_by_lang[result.iso] += 1
+
+            self.likely_bad_splits[result.iso] += result.sentence_endings
+
+            for length, sent in result.sents_by_length.items():
+                if len(self.longest_sents[result.iso]) < self.top_k_longest:
+                    self.longest_sents[result.iso].append((length, sent))
+                else:
+                    heappushpop(self.longest_sents[result.iso], (length, sent))
+                self.sentence_lengths_frequency[result.iso][length] += 1
+
+    def update_from_counter(self, result_counter: 'SentenceCounter'):
+        for iso in result_counter.segmentation_rate_sum_by_lang:
+            self.segmentation_rate_sum_by_lang[iso] += result_counter.segmentation_rate_sum_by_lang[iso]
+            self.article_count_by_lang[iso] += result_counter.article_count_by_lang[iso]
+            self.num_segmented[iso] += result_counter.num_segmented[iso]
+            self.num_unsegmented[iso] += result_counter.num_unsegmented[iso]
+            self.likely_bad_splits[iso] += result_counter.likely_bad_splits[iso]
+            for length in result_counter.sentence_lengths_frequency[iso]:
+                self.sentence_lengths_frequency[iso][length] += result_counter.sentence_lengths_frequency[iso][length]
+
+            for length, sent in result_counter.longest_sents[iso]:
+                if len(self.longest_sents[iso]) < self.top_k_longest:
+                    self.longest_sents[iso].append((length, sent))
+                else:
+                    heappushpop(self.longest_sents[iso], (length, sent))
 
 
 def find_docpaths(inputdir: str) -> Generator[str, None, None]:
@@ -122,6 +139,24 @@ def count_docs(path: str) -> Result:
         )
 
 
+def count_batch(batch: List[str], top_longest: int = 15, num_top_sent_ends: int = 20) -> SentenceCounter:
+    counter = SentenceCounter(top_k_longest=top_longest, num_top_sent_endings=num_top_sent_ends)
+    for docpath in batch:
+        counter.process_result(count_docs(docpath))
+    return counter
+
+
+def yield_batches(docpath_gen: Generator[str, None, None], batchsize: int = 100) -> Generator[List[str], None, None]:
+    batch = []
+    for docpath in docpath_gen:
+        if len(batch) >= batchsize:
+            yield batch
+            batch = []
+        batch.append(docpath)
+    if batch:
+        yield batch
+
+
 def run():
     parser = ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -130,22 +165,25 @@ def run():
     )
     parser.add_argument("outdir", help="Output directory")
     parser.add_argument("--n-workers", type=int, default=1)
+    parser.add_argument("--batchsize", type=int, default=1)
+    parser.add_argument("--top-k-longest", type=int, default=15)
+    parser.add_argument("--num-top-sent-endings", type=int, default=20)
     args = parser.parse_args()
 
-    counter = SentenceCounter(top_k_longest=15, num_top_sent_endings=20)
+    counter = SentenceCounter(top_k_longest=args.top_k_longest, num_top_sent_endings=args.num_top_sent_endings)
+
+    count_batch_partial = partial(count_batch, top_longest=args.top_k_longest, num_top_sent_ends=args.num_top_sent_endings)
 
     if args.n_workers == 1:
-        for path in find_docpaths(args.inputdir):
-            result = count_docs(path)
-            if result.is_article:
-                counter.process_result(result)
+        for path in yield_batches(find_docpaths(args.inputdir)):
+            result_counter = count_batch_partial(path)
+            counter.update_from_counter(result_counter)
     else:
         with Pool(args.n_workers) as pool:
-            for result in pool.imap_unordered(
-                    count_docs, find_docpaths(args.inputdir), chunksize=100
+            for result_counter in pool.imap_unordered(
+                    count_batch_partial, yield_batches(find_docpaths(args.inputdir), batchsize=args.batchsize), chunksize=100
             ):
-                if result.is_article:
-                    counter.process_result(result)
+                counter.update_from_counter(result_counter)
     counter.write_all_results(args.outdir)
 
 
