@@ -681,7 +681,6 @@ def _process_jsondocs(
     queue: JoinableQueue,
     worker_id: int,
     outdir: str,
-    custom_segmentation_model_dir: Optional[str] = None
     # tokenizers: Dict[str, Tokenizer],
 ) -> None:
     print(f"Starting worker {worker_id}")
@@ -706,9 +705,6 @@ def _process_jsondocs(
 @click.argument("outputdir")
 @click.option("--n-workers", type=int, default=1)
 @click.option("--batchsize", type=int, default=100)
-@click.option(
-    "--custom-segmentation-dir", type=click.Path(dir_okay=True, file_okay=False)
-)
 def fromfiles(
     inputdir,
     outputdir,
@@ -762,9 +758,6 @@ def fromfiles(
 )
 @click.option("--start-date", type=str, help="%Y-%m-%d", default=None)
 @click.option("--end-date", type=str, help="%Y-%m-%d", default=None)
-@click.option(
-    "--custom-segmentation-dir", type=click.Path(dir_okay=True, file_okay=False)
-)
 def fromdb(
     outputdir: str,
     n_extractors: int,
