@@ -714,9 +714,7 @@ def fromfiles(
     multiprocessing.set_start_method("spawn")
     queue: JoinableQueue = JoinableQueue()
     workers = [
-        Process(
-            target=_process_paths, args=(queue, i, outputdir)
-        )
+        Process(target=_process_paths, args=(queue, i, outputdir))
         for i in range(n_workers)
     ]
     for worker in workers:
