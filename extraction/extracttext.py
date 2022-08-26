@@ -214,7 +214,6 @@ def extract_document(
     # tokenizers: Dict[str, Tokenizer],
     segmenter: Optional[Segmenter],
     tokenizer: Optional[Tokenizer],
-    custom_segmentation_model_path: Optional[str] = None,
     cuda_id=None,
 ) -> Tuple[Optional[Segmenter], Tokenizer]:
     url = urllib.parse.unquote(json_doc.get("url", ""))
@@ -299,7 +298,7 @@ def extract_document(
         if iso in SEGMENTABLE_LANGUAGES and (
             segmenter is None or segmenter.language != iso
         ):
-            segmenter = setup_segmenter(iso, cuda_id, custom_segmentation_model_path)
+            segmenter = setup_segmenter(iso, cuda_id)
         elif iso not in SEGMENTABLE_LANGUAGES:
             segmenter = None
         # segmenter = segmenters[iso] if iso in segmenters else segmenters["xx"]
@@ -658,7 +657,6 @@ def _process_paths(
     queue: JoinableQueue,
     worker_id: int,
     outdir: str,
-    custom_segmentation_model_dir: Optional[str] = None,
 ) -> None:
     print(f"Starting worker {worker_id}")
     # Segmenters and tokenizers get setup based on language in extract_document
@@ -675,7 +673,6 @@ def _process_paths(
                 segmenter,
                 tokenizer,
                 cuda_id=worker_id % 2,
-                custom_segmentation_model_path=custom_segmentation_model_dir,
             )
         queue.task_done()
 
@@ -700,7 +697,6 @@ def _process_jsondocs(
                 segmenter,
                 tokenizer,
                 cuda_id=worker_id % 2,
-                custom_segmentation_model_path=custom_segmentation_model_dir,
             )
         queue.task_done()
 
@@ -718,13 +714,12 @@ def fromfiles(
     outputdir,
     n_workers,
     batchsize,
-    custom_segmentation_dir: Optional[str] = None,
 ):
     multiprocessing.set_start_method("spawn")
     queue: JoinableQueue = JoinableQueue()
     workers = [
         Process(
-            target=_process_paths, args=(queue, i, outputdir, custom_segmentation_dir)
+            target=_process_paths, args=(queue, i, outputdir)
         )
         for i in range(n_workers)
     ]
@@ -780,7 +775,6 @@ def fromdb(
     port: int = 27200,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    custom_segmentation_dir: Optional[str] = None,
 ):
     multiprocessing.set_start_method("spawn")
 
@@ -791,7 +785,7 @@ def fromdb(
     workers = [
         Process(
             target=_process_jsondocs,
-            args=(queue, i, outputdir, custom_segmentation_dir),
+            args=(queue, i, outputdir),
         )
         for i in range(n_extractors)
     ]

@@ -21,6 +21,7 @@ from extraction.utils import SPACE_CHARS_STR
 
 SEGMENTABLE_LANGUAGES = {
     "amh",
+    "bod",
     "cmn",
     "ell",
     "eng",
@@ -31,11 +32,15 @@ SEGMENTABLE_LANGUAGES = {
     "kor",
     "khm",
     "lao",
+    "lin",
     "mya",
+    "nde",
     "por",
     "prs",
     "pus",
     "rus",
+    "sna",
+    "som",
     "spa",
     "srp",
     "tha",
@@ -50,19 +55,14 @@ SEGMENTABLE_LANGUAGES = {
 CUSTOM_ERSATZ_MODELS = {
     "aze",
     "ben",
-    "bod",
     "bos",
     "hat",
     "hau",
     "kat",
     "kin",
     "kur",
-    "lin",
     "mkd",
-    "nde",
     "orm",
-    "sna",
-    "som",
     "sqi",
     "swh",
     "uzb",
@@ -371,12 +371,11 @@ class ErsatzSegmenter(Segmenter):
         self,
         iso: str = "xx",
         cuda_id: Optional[int] = None,
-        custom_segmentation_model_path: Optional[str] = None,
     ):
         super().__init__()
         self.language = iso
         self.ersatz_model: ErsatzModel = ErsatzSegmenter.setup_ersatz(
-            iso, cuda_id, custom_segmentation_model_path
+            iso, cuda_id,
         )
 
     def segment(self, text: str) -> List[str]:
@@ -393,7 +392,7 @@ class ErsatzSegmenter(Segmenter):
 
     @staticmethod
     def setup_ersatz(
-        iso: str, cuda_id: Optional[int] = None, custom_model_dir: Optional[str] = None
+        iso: str, cuda_id: Optional[int] = None,
     ) -> ErsatzModel:
         # Load model manually
         # Use model to split sentences
@@ -424,7 +423,7 @@ class ErsatzSegmenter(Segmenter):
         elif iso == "cmn":
             model_path = get_model_path("zh")
         elif iso in CUSTOM_ERSATZ_MODELS:
-            model_path = f"{custom_model_dir}/{iso}.checkpoint.model"
+            model_path = get_model_path(iso)
         elif iso == "xx":
             model_path = get_model_path("default-multilingual")
         else:
@@ -439,7 +438,6 @@ class ErsatzSegmenter(Segmenter):
 def setup_segmenter(
     iso: str = "xx",
     cuda_id: Optional[int] = None,
-    custom_segmentation_model_path: Optional[str] = None,
 ) -> Segmenter:
     """Setup segmenters. Use cuda id to setup ersatz models on multiple gpus if applicable."""
     if iso == "tir":
@@ -476,15 +474,18 @@ def setup_segmenter(
         return StanzaSegmenter(iso)
     elif iso == "mya":
         return StanzaSegmenter(iso)
+    elif iso == "bod":
+        return TibetanNaiveSegmenter()
+    elif iso in {"lin", "nde", "sna", "som"}:
+        return NaiveRomanSegmenter(iso)
     elif iso in CUSTOM_ERSATZ_MODELS:
-        return ErsatzSegmenter(
-            iso, custom_segmentation_model_path=custom_segmentation_model_path
-        )
+        return ErsatzSegmenter(iso)
     else:
         return ErsatzSegmenter(iso, cuda_id)
 
 
 if __name__ == "__main__":
+    # Uncomment things for testing
     # segmenter = TibetanNaiveSegmenter()
     segmenter = NaiveRomanSegmenter("nde")
     sents = []
