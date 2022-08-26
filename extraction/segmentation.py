@@ -209,8 +209,8 @@ class TibetanNaiveSegmenter(Segmenter):
                 and candidate.left != "\u0f05"  # ༅ YIG MGO SGAB MA
                 and candidate.leftleft != "\u0f05"
                 and candidate.right not in self.punct
-                and not candidate.left.isdigit()
-                and not candidate.right.isdigit()
+                and (candidate.left is None or not candidate.left.isdigit())
+                and (candidate.right is None or not candidate.right.isdigit())
             ):
                 stripped_new_sent = new_sent.strip()
                 if stripped_new_sent:
@@ -375,7 +375,8 @@ class ErsatzSegmenter(Segmenter):
         super().__init__()
         self.language = iso
         self.ersatz_model: ErsatzModel = ErsatzSegmenter.setup_ersatz(
-            iso, cuda_id,
+            iso,
+            cuda_id,
         )
 
     def segment(self, text: str) -> List[str]:
@@ -392,7 +393,8 @@ class ErsatzSegmenter(Segmenter):
 
     @staticmethod
     def setup_ersatz(
-        iso: str, cuda_id: Optional[int] = None,
+        iso: str,
+        cuda_id: Optional[int] = None,
     ) -> ErsatzModel:
         # Load model manually
         # Use model to split sentences
