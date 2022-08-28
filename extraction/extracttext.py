@@ -6,6 +6,7 @@ import os
 import json
 import time
 import urllib.parse
+from multiprocessing import Semaphore
 
 import click
 from torch import multiprocessing
@@ -214,6 +215,7 @@ def extract_document(
     # tokenizers: Dict[str, Tokenizer],
     segmenter: Optional[Segmenter],
     tokenizer: Optional[Tokenizer],
+    sem: Semaphore,
     cuda_id=None,
 ) -> Tuple[Optional[Segmenter], Tokenizer]:
     url = urllib.parse.unquote(json_doc.get("url", ""))
@@ -247,7 +249,7 @@ def extract_document(
         parallel = json_doc.get("parallel_url")
         application_ld_json = json_doc.get("application_ld_json", {})
         soup = BeautifulSoup(html, "html.parser")
-        title = soup.title.getText()
+        title = soup.title.getText() if soup.title else ""
         if iso == "kor":
             title = title.strip("| Voice of America - Korean")
 
@@ -293,12 +295,19 @@ def extract_document(
             removed_outdir = os.path.join(
                 outdir, iso + "_" + domain, "eng-filtered-paragraphs"
             )
-            write_removed_paragraphs(filename, removed_paragraphs, removed_outdir)
+            try:
+                write_removed_paragraphs(filename, removed_paragraphs, removed_outdir)
+            except OSError as exc:
+                # Handles file name too long error
+                if exc.errno == 63:
+                    filename_short = filename[-100:]
+                    write_removed_paragraphs(filename_short, removed_paragraphs, removed_outdir)
 
         if iso in SEGMENTABLE_LANGUAGES and (
             segmenter is None or segmenter.language != iso
         ):
-            segmenter = setup_segmenter(iso, cuda_id)
+            with sem:
+                segmenter = setup_segmenter(iso, cuda_id)
         elif iso not in SEGMENTABLE_LANGUAGES:
             segmenter = None
         # segmenter = segmenters[iso] if iso in segmenters else segmenters["xx"]
@@ -320,7 +329,8 @@ def extract_document(
         if iso in TOKENIZABLE_LANGUAGES and (
             tokenizer is None or tokenizer.language != iso
         ):
-            tokenizer = setup_tokenizer(iso)
+            with sem:
+                tokenizer = setup_tokenizer(iso)
         elif iso not in TOKENIZABLE_LANGUAGES:
             tokenizer = None
         if sentences and tokenizer:
@@ -657,6 +667,7 @@ def _process_paths(
     queue: JoinableQueue,
     worker_id: int,
     outdir: str,
+    sem: Semaphore
 ) -> None:
     print(f"Starting worker {worker_id}")
     # Segmenters and tokenizers get setup based on language in extract_document
@@ -672,6 +683,7 @@ def _process_paths(
                 outdir,
                 segmenter,
                 tokenizer,
+                sem,
                 cuda_id=worker_id % 2,
             )
         queue.task_done()
@@ -681,6 +693,7 @@ def _process_jsondocs(
     queue: JoinableQueue,
     worker_id: int,
     outdir: str,
+    sem: Semaphore
     # tokenizers: Dict[str, Tokenizer],
 ) -> None:
     print(f"Starting worker {worker_id}")
@@ -695,6 +708,7 @@ def _process_jsondocs(
                 outdir,
                 segmenter,
                 tokenizer,
+                sem,
                 cuda_id=worker_id % 2,
             )
         queue.task_done()
@@ -713,8 +727,9 @@ def fromfiles(
 ):
     multiprocessing.set_start_method("spawn")
     queue: JoinableQueue = JoinableQueue()
+    sem = multiprocessing.Semaphore(1)
     workers = [
-        Process(target=_process_paths, args=(queue, i, outputdir))
+        Process(target=_process_paths, args=(queue, i, outputdir, sem))
         for i in range(n_workers)
     ]
     for worker in workers:
@@ -772,11 +787,13 @@ def fromdb(
     m = multiprocessing.Manager()
     # TODO make maxsize argument instead of hardcoded
     queue = m.Queue(maxsize=1000)
+    # For blocking processes from loading segmenters or tokenizers at same time
+    sem = multiprocessing.Semaphore(1)
 
     workers = [
         Process(
             target=_process_jsondocs,
-            args=(queue, i, outputdir),
+            args=(queue, i, outputdir, sem),
         )
         for i in range(n_extractors)
     ]
