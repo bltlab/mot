@@ -136,7 +136,8 @@ class NaiveRomanSegmenter(Segmenter):
             if (
                 candidate.left_token
                 and len(candidate.left_token) <= 4
-                and candidate.left_token[0].isupper()
+                # any chars contain upper for Ndebele uMnu.
+                and any(char.isupper() for char in candidate.left_token)
             ):
                 continue
 
