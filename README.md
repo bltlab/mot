@@ -302,6 +302,9 @@ The directory `qualitychecks` contains some scripts for analysis of the corpus.
 
 ## Making a new release 
 
+Run `release.sh <extractions-dir> <releaseable-extractions-dir>` to filter
+categories that we do not include and create tgz files.
+
 Install `gh` if it isn't already installed. `conda install gh --channel conda-forge`
 Login with `gh auth login`. Follow the steps for logging in through a browser.
 Create a release draft on github.
