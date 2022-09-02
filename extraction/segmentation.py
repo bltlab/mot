@@ -119,8 +119,11 @@ class NaiveRomanSegmenter(Segmenter):
                 raise ValueError(
                     f"Bad NaiveSegmenter candidate match in sent:\n {match.string}"
                 )
-            left_context = text[punct_idx - self.BUFFER : punct_idx - 1].split()
-            right_context = text[end_idx + self.BUFFER : punct_idx].split()
+            left_start = punct_idx - self.BUFFER
+            if left_start <= 0:
+                left_start = 0
+            left_context = text[left_start : punct_idx -1].split()
+            right_context = text[end_idx : end_idx + self.BUFFER].split()
             # Pseudo tokens
             left_token = left_context[-1] if left_context else None
             right_token = right_context[0] if right_context else None
@@ -132,6 +135,15 @@ class NaiveRomanSegmenter(Segmenter):
         sents = []
         start = 0
         for candidate in self._next_candidate(texts):
+            # Check explicitly for -Mnu Ndebele titles
+            # This has to be separate from other titles and abbreviations
+            # because Ndebele titles with prefixes can be longer than other langs
+            #  ex) nguMnu.
+            if (
+                candidate.left_token
+                and candidate.left_token.endswith("Mnu")
+            ):
+                continue
             # Skip splitting likely Prof. , Mr. etc ABC.
             if (
                 candidate.left_token
