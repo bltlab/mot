@@ -301,7 +301,9 @@ def extract_document(
                 # Handles file name too long error
                 if exc.errno == 63:
                     filename_short = filename[-100:]
-                    write_removed_paragraphs(filename_short, removed_paragraphs, removed_outdir)
+                    write_removed_paragraphs(
+                        filename_short, removed_paragraphs, removed_outdir
+                    )
 
         if iso in SEGMENTABLE_LANGUAGES and (
             segmenter is None or segmenter.language != iso
@@ -664,10 +666,7 @@ def is_valid(text: str) -> bool:
 
 
 def _process_paths(
-    queue: JoinableQueue,
-    worker_id: int,
-    outdir: str,
-    sem: Semaphore
+    queue: JoinableQueue, worker_id: int, outdir: str, sem: Semaphore
 ) -> None:
     print(f"Starting worker {worker_id}")
     # Segmenters and tokenizers get setup based on language in extract_document
