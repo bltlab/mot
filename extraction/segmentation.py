@@ -1,7 +1,9 @@
 import re
+import sys
 from abc import ABC, abstractmethod
+from collections import namedtuple
 from io import StringIO
-from typing import Sequence, List, Optional
+from typing import Sequence, List, Optional, Generator
 
 import laonlp
 import pythainlp
@@ -19,6 +21,7 @@ from extraction.utils import SPACE_CHARS_STR
 
 SEGMENTABLE_LANGUAGES = {
     "amh",
+    "bod",
     "cmn",
     "ell",
     "eng",
@@ -29,11 +32,15 @@ SEGMENTABLE_LANGUAGES = {
     "kor",
     "khm",
     "lao",
+    "lin",
     "mya",
+    "nde",
     "por",
     "prs",
     "pus",
     "rus",
+    "sna",
+    "som",
     "spa",
     "srp",
     "tha",
@@ -47,16 +54,15 @@ SEGMENTABLE_LANGUAGES = {
 
 CUSTOM_ERSATZ_MODELS = {
     "aze",
+    "ben",
     "bos",
     "hat",
     "hau",
+    "kat",
     "kin",
-    "lin",
+    "kur",
     "mkd",
-    "nde",
     "orm",
-    "sna",
-    "som",
     "sqi",
     "swh",
     "uzb",
@@ -75,6 +81,156 @@ class Segmenter(ABC):
     @abstractmethod
     def segment(self, texts: str) -> List[str]:
         pass
+
+
+class NaiveRomanSegmenter(Segmenter):
+    """
+    Segmenter that splits on language specific punctuation if the split creates
+    new sentences that are long enough and if the token before punctuation isn't
+    suspiciously short and could be an abbreviation or title.
+    abbreviations, titles, after digits (unless is a year 1XXX or 20XX)
+    closing parens / quotes
+
+    Shona text needs to preprocess if AZ.AZ then go ahead and add space.
+    Then split on usual rules.
+    """
+
+    Candidate = namedtuple(
+        "Candidate", ("punct_idx", "end_idx", "left_token", "right_token")
+    )
+    PUNCT = r"((\.+)|([!?]))"
+    TARGET = re.compile(PUNCT + r"(([A-Za-z])|(\s*(['`\"”)}\]]*)|(\s+)))")
+
+    def __init__(self, lang: str, min_length=10):
+        super(NaiveRomanSegmenter, self).__init__()
+        self.language = lang
+        self.min_length = min_length
+        self.BUFFER = 20
+
+    def _next_candidate(self, text: str) -> Generator[Candidate, None, None]:
+        for match in re.finditer(NaiveRomanSegmenter.TARGET, text):
+            if match.group(4).isalpha():
+                end_idx = match.end(4) - 1
+            else:
+                end_idx = match.end(4)
+            punct_idx = match.end(1) if match.group(1) else match.end(2)
+            if punct_idx == -1:
+                # Shouldn't be possible since each match should have one of the two punctuations
+                raise ValueError(
+                    f"Bad NaiveSegmenter candidate match in sent:\n {match.string}"
+                )
+            left_start = punct_idx - self.BUFFER
+            if left_start <= 0:
+                left_start = 0
+            left_context = text[left_start : punct_idx - 1].split()
+            right_context = text[end_idx : end_idx + self.BUFFER].split()
+            # Pseudo tokens
+            left_token = left_context[-1] if left_context else None
+            right_token = right_context[0] if right_context else None
+            yield NaiveRomanSegmenter.Candidate(
+                punct_idx, end_idx, left_token, right_token
+            )
+
+    def segment(self, texts: str) -> List[str]:
+        sents = []
+        start = 0
+        for candidate in self._next_candidate(texts):
+            # Check explicitly for -Mnu Ndebele titles
+            # This has to be separate from other titles and abbreviations
+            # because Ndebele titles with prefixes can be longer than other langs
+            #  ex) nguMnu.
+            if candidate.left_token and candidate.left_token.endswith("Mnu"):
+                continue
+            # Skip splitting likely Prof. , Mr. etc ABC.
+            if (
+                candidate.left_token
+                and len(candidate.left_token) <= 4
+                # any chars contain upper for Ndebele uMnu.
+                and any(char.isupper() for char in candidate.left_token)
+            ):
+                continue
+
+            # Skip numeric things unless they look like a year (len of 4).
+            if (
+                candidate.left_token
+                and candidate.left_token.isdigit()
+                and len(candidate.left_token) != 4
+            ):
+                continue
+            if (
+                candidate.right_token
+                and candidate.right_token.isdigit()
+                and len(candidate.right_token) != 4
+            ):
+                continue
+            # Hacky way to stop splits on .. or ...
+            if candidate.left_token and candidate.left_token.endswith("."):
+                continue
+            # Too risky if sentence not capitalized after punctuation
+            if candidate.right_token and not candidate.right_token[0].isupper():
+                continue
+            new_sent = texts[start : candidate.end_idx]
+            if len(new_sent) < self.min_length:
+                continue
+            stripped_new_sent = new_sent.strip()
+            if stripped_new_sent:
+                sents.append(stripped_new_sent)
+                start = candidate.end_idx
+        if start <= len(texts):
+            rest = texts[start:].strip()
+            if rest.strip():
+                sents.append(rest)
+        return sents
+
+
+class TibetanNaiveSegmenter(Segmenter):
+    """
+    Simple segmenter for Tibetan. Splits text on tibetan punctuation.
+    Minimal safeguard to require the created sentences are a minimum length
+    ༅།། and །། shouldn't split. Everything other ། is fair game if not too short.
+    """
+
+    Candidate = namedtuple("Candidate", ("punct_idx", "left", "right", "leftleft"))
+
+    def __init__(self, min_length: int = 8):
+        super(TibetanNaiveSegmenter, self).__init__()
+        self.language = "bod"
+        self.punct = {
+            "\u0f0d",
+            "\u0f0e",
+        }  # TIBETAN MARK SHAD and TIBETAN MARK NYIS SHAD
+        self.min_length = min_length
+
+    def _next_candidate(self, text: str) -> Generator[Candidate, None, None]:
+        for idx, ch in enumerate(text):
+            if ch in self.punct:
+                left = text[idx - 1] if idx - 1 > 0 else None
+                leftleft = text[idx - 2] if idx - 2 > 0 else None
+                right = text[idx + 1] if idx + 1 < len(text) else None
+                yield TibetanNaiveSegmenter.Candidate(idx, left, right, leftleft)
+
+    def segment(self, texts: str) -> List[str]:
+        sents = []
+        start = 0
+        for candidate in self._next_candidate(texts):
+            new_sent = texts[start : candidate.punct_idx + 1]
+            if (
+                len(new_sent) >= self.min_length
+                and candidate.left != "\u0f05"  # ༅ YIG MGO SGAB MA
+                and candidate.leftleft != "\u0f05"
+                and candidate.right not in self.punct
+                and (candidate.left is None or not candidate.left.isdigit())
+                and (candidate.right is None or not candidate.right.isdigit())
+            ):
+                stripped_new_sent = new_sent.strip()
+                if stripped_new_sent:
+                    sents.append(stripped_new_sent)
+                    start = candidate.punct_idx + 1
+        if start <= len(texts):
+            rest = texts[start:].strip()
+            if rest.strip():
+                sents.append(rest)
+        return sents
 
 
 class StanzaSegmenter(Segmenter):
@@ -225,12 +381,12 @@ class ErsatzSegmenter(Segmenter):
         self,
         iso: str = "xx",
         cuda_id: Optional[int] = None,
-        custom_segmentation_model_path: Optional[str] = None,
     ):
         super().__init__()
         self.language = iso
         self.ersatz_model: ErsatzModel = ErsatzSegmenter.setup_ersatz(
-            iso, cuda_id, custom_segmentation_model_path
+            iso,
+            cuda_id,
         )
 
     def segment(self, text: str) -> List[str]:
@@ -247,7 +403,8 @@ class ErsatzSegmenter(Segmenter):
 
     @staticmethod
     def setup_ersatz(
-        iso: str, cuda_id: Optional[int] = None, custom_model_dir: Optional[str] = None
+        iso: str,
+        cuda_id: Optional[int] = None,
     ) -> ErsatzModel:
         # Load model manually
         # Use model to split sentences
@@ -278,7 +435,7 @@ class ErsatzSegmenter(Segmenter):
         elif iso == "cmn":
             model_path = get_model_path("zh")
         elif iso in CUSTOM_ERSATZ_MODELS:
-            model_path = f"{custom_model_dir}/{iso}.checkpoint.model"
+            model_path = get_model_path(iso)
         elif iso == "xx":
             model_path = get_model_path("default-multilingual")
         else:
@@ -293,7 +450,6 @@ class ErsatzSegmenter(Segmenter):
 def setup_segmenter(
     iso: str = "xx",
     cuda_id: Optional[int] = None,
-    custom_segmentation_model_path: Optional[str] = None,
 ) -> Segmenter:
     """Setup segmenters. Use cuda id to setup ersatz models on multiple gpus if applicable."""
     if iso == "tir":
@@ -330,51 +486,64 @@ def setup_segmenter(
         return StanzaSegmenter(iso)
     elif iso == "mya":
         return StanzaSegmenter(iso)
+    elif iso == "bod":
+        return TibetanNaiveSegmenter()
+    elif iso in {"lin", "nde", "sna", "som"}:
+        return NaiveRomanSegmenter(iso)
     elif iso in CUSTOM_ERSATZ_MODELS:
-        return ErsatzSegmenter(
-            iso, custom_segmentation_model_path=custom_segmentation_model_path
-        )
+        return ErsatzSegmenter(iso)
     else:
         return ErsatzSegmenter(iso, cuda_id)
 
 
 if __name__ == "__main__":
+    # Uncomment things for testing
+    # segmenter = TibetanNaiveSegmenter()
+    segmenter = NaiveRomanSegmenter("nde")
+    sents = []
+    with open(sys.argv[1], "r", encoding="utf8") as file:
+        for line in file:
+            sents.extend(segmenter.segment(line))
 
+    with open(sys.argv[2], "w", encoding="utf8") as outfile:
+        for sent in sents:
+            print(sent, file=outfile)
+            print(file=outfile)
     # Testing ground
-    segmenter = setup_segmenter("spa")
-
-    sents = segmenter.segment(
-        "Buenos dias! Como estas? Hay mucha gente aqui. me gusta cafe. Llama a Dra. Cafe. "
-    )
-    print(sents)
-    segmenter = setup_segmenter("tha")
-    sents = segmenter.segment(
-        "Saoirse Ronan เป็นคนหนึ่งที่ได้รับการเสนอชื่อให้เข้ารับรางวัลตุ๊กตาทองสำหรับนักแสดงยอดเยี่ยมฝ่ายหญิงจาก “Brooklyn”"
-    )
-    print(sents)
-
-    from parsivar import Tokenizer, Normalizer
-
-    tmp_text = "به گزارش ایسنا سمینار شیمی آلی از امروز ۱۱ شهریور ۱۳۹۶ در دانشگاه علم و صنعت ایران آغاز به کار کرد. این سمینار تا ۱۳ شهریور ادامه می یابد."
-    my_normalizer = Normalizer()
-    my_tokenizer = Tokenizer()
-    sents = my_tokenizer.tokenize_sentences(tmp_text)
-    print(sents)
-
-    words = my_tokenizer.tokenize_words(tmp_text)
-    print(words)
-    segmenter = StanzaSegmenter("mya")
-    sentences = segmenter.segment(
-        """ျမန္မာႏိုင္ငံမွာ ေဖေဖာ္ဝါရီလ ၁ ရက္ေန႔ စစ္တပ္က အာဏာသိမ္းၿပီးတဲ့ေနာက္ ၿငိမ္းခ်မ္းေရးလုပ္ငန္းစဥ္ ေသဆုံးသြားၿပီလို႔ ႏိုင္ငံတကာ အက်ပ္အတည္းေတြကို ေစာင့္ၾကည့္ေလ့လာေနတဲ့ International Crisis Group (ICG) က ေျပာလိုက္ပါတယ္။
-
-စစ္တပ္က အာဏာသိမ္းလိုက္တာေၾကာင့္ လူထုထိခိုက္ရတဲ့ ပဋိပကၡေတြ အရွိန္ ျမင့္လာၿပီး လူမ်ိဳးစုလက္နက္ကိုင္အဖြဲ႕ အမ်ားအျပားပါဝင္တဲ့ ဆယ္စုႏွစ္တခုၾကာ ၿငိမ္းခ်မ္းေရးလုပ္ငန္းစဥ္ အဆုံးသတ္သြားၿပီလို႔ ICG က ေထာက္ျပထားပါတယ္။
-
-ဒါေၾကာင့္ ႏိုင္ငံတကာက အလႉရွင္ႏိုင္ငံေတြ၊ အဖြဲ႕အစည္းေတြအေနနဲ႔ ၿငိမ္းခ်မ္းေရးလုပ္ငန္းစဥ္ကို အေထာက္အပံ့ျပဳေနတာကေန လက္နက္ကိုင္ပဋိုပကၡျဖစ္ေနတဲ့ ေဒသေတြကလူထုကို ကူညီေထာက္ပံ့ေရးလုပ္ငန္းဘက္ အာ႐ုံေျပာင္းသင့္တယ္လို႔ ဒီကေန႔ ထုတ္ ICG အစီရင္ခံစာသစ္တခုမွာ တိုက္တြန္းထားပါတယ္။"""
-    )
-    for sent in sentences:
-        print(sent)
-        print()
-        tokens = segmenter.tokenize(sent)
-        print(tokens)
-        print()
-        print()
+#     segmenter = setup_segmenter("spa")
+#
+#     sents = segmenter.segment(
+#         "Buenos dias! Como estas? Hay mucha gente aqui. me gusta cafe. Llama a Dra. Cafe. "
+#     )
+#     print(sents)
+#     segmenter = setup_segmenter("tha")
+#     sents = segmenter.segment(
+#         "Saoirse Ronan เป็นคนหนึ่งที่ได้รับการเสนอชื่อให้เข้ารับรางวัลตุ๊กตาทองสำหรับนักแสดงยอดเยี่ยมฝ่ายหญิงจาก “Brooklyn”"
+#     )
+#     print(sents)
+#
+#     from parsivar import Tokenizer, Normalizer
+#
+#     tmp_text = "به گزارش ایسنا سمینار شیمی آلی از امروز ۱۱ شهریور ۱۳۹۶ در دانشگاه علم و صنعت ایران آغاز به کار کرد. این سمینار تا ۱۳ شهریور ادامه می یابد."
+#     my_normalizer = Normalizer()
+#     my_tokenizer = Tokenizer()
+#     sents = my_tokenizer.tokenize_sentences(tmp_text)
+#     print(sents)
+#
+#     words = my_tokenizer.tokenize_words(tmp_text)
+#     print(words)
+#     segmenter = StanzaSegmenter("mya")
+#     sentences = segmenter.segment(
+#         """ျမန္မာႏိုင္ငံမွာ ေဖေဖာ္ဝါရီလ ၁ ရက္ေန႔ စစ္တပ္က အာဏာသိမ္းၿပီးတဲ့ေနာက္ ၿငိမ္းခ်မ္းေရးလုပ္ငန္းစဥ္ ေသဆုံးသြားၿပီလို႔ ႏိုင္ငံတကာ အက်ပ္အတည္းေတြကို ေစာင့္ၾကည့္ေလ့လာေနတဲ့ International Crisis Group (ICG) က ေျပာလိုက္ပါတယ္။
+#
+# စစ္တပ္က အာဏာသိမ္းလိုက္တာေၾကာင့္ လူထုထိခိုက္ရတဲ့ ပဋိပကၡေတြ အရွိန္ ျမင့္လာၿပီး လူမ်ိဳးစုလက္နက္ကိုင္အဖြဲ႕ အမ်ားအျပားပါဝင္တဲ့ ဆယ္စုႏွစ္တခုၾကာ ၿငိမ္းခ်မ္းေရးလုပ္ငန္းစဥ္ အဆုံးသတ္သြားၿပီလို႔ ICG က ေထာက္ျပထားပါတယ္။
+#
+# ဒါေၾကာင့္ ႏိုင္ငံတကာက အလႉရွင္ႏိုင္ငံေတြ၊ အဖြဲ႕အစည္းေတြအေနနဲ႔ ၿငိမ္းခ်မ္းေရးလုပ္ငန္းစဥ္ကို အေထာက္အပံ့ျပဳေနတာကေန လက္နက္ကိုင္ပဋိုပကၡျဖစ္ေနတဲ့ ေဒသေတြကလူထုကို ကူညီေထာက္ပံ့ေရးလုပ္ငန္းဘက္ အာ႐ုံေျပာင္းသင့္တယ္လို႔ ဒီကေန႔ ထုတ္ ICG အစီရင္ခံစာသစ္တခုမွာ တိုက္တြန္းထားပါတယ္။"""
+#     )
+#     for sent in sentences:
+#         print(sent)
+#         print()
+#         tokens = segmenter.tokenize(sent)
+#         print(tokens)
+#         print()
+#         print()

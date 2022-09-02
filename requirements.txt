@@ -20,3 +20,4 @@ laonlp
 khmer-nltk
 stanza
 spacy-pkuseg>=0.0.27,<0.1.0
+git+https://github.com/cpalenmichel/ersatz-for-mot.git@master#egg=ersatz

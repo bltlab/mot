@@ -283,6 +283,12 @@ Use `fromfiles` to run extract text from intermediate json files dumped from the
 Sample call with parameters that seem ok on our dev machine.
 `time python extraction/extracttext.py fromdb ~/mot/extractions-03.02.22/ --port 27200 --n-extractors 50 --n-db-queriers 10 --batchsize 100 --filemap filemap-03.01.22.tsv --start-date 2001-01-01`
 
+In the event that the extraction script hangs, this is likely caused by one process
+crashing.
+Run with printing redirected to a log and search the log to see what went wrong.
+The rest of the processes will likely finish the rest of the work,
+but you may use a handful of documents unless the error is fixed.
+
 
 ## One-off Scripts 
 
@@ -295,6 +301,9 @@ but are not part of the main extraction process.
 The directory `qualitychecks` contains some scripts for analysis of the corpus.
 
 ## Making a new release 
+
+Run `release.sh <extractions-dir> <releaseable-extractions-dir>` to filter
+categories that we do not include and create tgz files.
 
 Install `gh` if it isn't already installed. `conda install gh --channel conda-forge`
 Login with `gh auth login`. Follow the steps for logging in through a browser.
