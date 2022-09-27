@@ -15,6 +15,7 @@ from spacy.lang.tr import Turkish
 from spacy.lang.xx import MultiLanguage
 from spacy.lang.zh import Chinese
 from spacy.tokenizer import Tokenizer
+from utoken import utokenize
 
 from extraction.segmentation import StanzaSegmenter
 from extraction.utils import SPACE_CHARS_STR
@@ -22,6 +23,7 @@ from extraction.utils import SPACE_CHARS_STR
 
 TOKENIZABLE_LANGUAGES = {
     "amh",
+    "bod",
     "cmn",
     "ell",
     "eng",
@@ -45,6 +47,29 @@ TOKENIZABLE_LANGUAGES = {
     "urd",
     "vie",
 }
+
+UTOKEN_TOKENIZABLE = {
+    "aze",
+    "ben",  # utoken reported testing
+    "bos",
+    "hat",
+    "hau",
+    "kat",  # utoken reported testing
+    "kin",
+    "kur",
+    "lin",
+    "mkd",
+    "nde",
+    "orm",
+    "pus",  # utoken reported testing
+    "sna",
+    "som",  # utoken reported testing
+    "sqi",
+    "swh",  # utoken reported testing
+    "uzb",
+}
+
+TOKENIZABLE_LANGUAGES = TOKENIZABLE_LANGUAGES.union(UTOKEN_TOKENIZABLE)
 
 
 def load_khmernltk() -> Callable:
@@ -183,6 +208,41 @@ class GeezTokenizer(BaseTokenizer):
         return self.segmenter.amharic_tokenizer(text)
 
 
+class UTokenizer(BaseTokenizer):
+    """
+    https://github.com/uhermjakob/utoken
+    Tested on ben, kat, pus, som, swh. Likely can handle others decently, but not tested.
+    """
+    def __init__(self, lang=None):
+        super().__init__()
+        self.language = lang
+        self.tokenizer = utokenize.Tokenizer(lang_code=lang)
+
+    def tokenize(self, text: str) -> List[str]:
+        return self.tokenizer.utokenize_string(text).split(' ')
+
+
+class TibetanTokenizer(BaseTokenizer):
+    """
+        https://github.com/uhermjakob/utoken
+        Tested on ben, kat, pus, som, swh. Likely can handle others decently, but not tested.
+        """
+
+    def __init__(self):
+        super().__init__()
+        self.language = "bod"
+        BodTokenizer = TibetanTokenizer.load_botok_tokenizer()
+        self.tokenizer = BodTokenizer()
+
+    def tokenize(self, text: str) -> List[str]:
+        return [t.text.strip() for t in self.tokenizer.tokenize(text)]
+
+    @staticmethod
+    def load_botok_tokenizer() -> Callable:
+        from botok import WordTokenizer as BodTokenizer
+        return BodTokenizer
+
+
 class SpacyTokenizer(BaseTokenizer):
     def __init__(self, lang_code: Optional[str] = None):
         super().__init__()
@@ -261,6 +321,10 @@ def setup_tokenizer(iso: str = "xx") -> BaseTokenizer:
         return StanzaTokenizer(iso)
     elif iso == "khm":
         return KhmerTokenizer()
+    elif iso == "bod":
+        return TibetanTokenizer()
+    elif iso in UTOKEN_TOKENIZABLE:
+        return UTokenizer(lang=iso)
     else:
         return SpacyTokenizer()
 
@@ -272,9 +336,18 @@ def tokenize(sent: str, tokenizer: Tokenizer) -> List[str]:
 
 if __name__ == "__main__":
     tokenizer = setup_tokenizer("eng")
+    utokenizer = UTokenizer(lang="spa")
     sents = [
         "This, is my sentence.",
         "Esto es otro frase pero con una 'isn't', jajaja!",
     ]
     for s in sents:
-        print(tokenize(s, tokenizer))
+        print(tokenizer.tokenize(s))
+
+    for s in sents:
+        print(utokenizer.tokenize(s))
+
+    bod_tokenizer = TibetanTokenizer()
+    text = """བཀྲ་ཤིས་བདེ་ལེགས་ཞུས་རྒྱུ་ཡིན་ སེམས་པ་སྐྱིད་པོ་འདུག།"""
+    tokens = bod_tokenizer.tokenize(text)
+    print(tokens)
