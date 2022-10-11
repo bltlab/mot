@@ -224,9 +224,8 @@ class UTokenizer(BaseTokenizer):
 
 class TibetanTokenizer(BaseTokenizer):
     """
-        https://github.com/uhermjakob/utoken
-        Tested on ben, kat, pus, som, swh. Likely can handle others decently, but not tested.
-        """
+    Tokenization with botok tokenizer. https://github.com/OpenPecha/Botok/tree/docs
+    """
 
     def __init__(self):
         super().__init__()
