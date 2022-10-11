@@ -6,7 +6,7 @@ import os
 import json
 import time
 import urllib.parse
-from multiprocessing import Semaphore
+from multiprocessing import Semaphore, synchronize
 
 import click
 from torch import multiprocessing
@@ -215,7 +215,7 @@ def extract_document(
     # tokenizers: Dict[str, Tokenizer],
     segmenter: Optional[Segmenter],
     tokenizer: Optional[Tokenizer],
-    sem: Semaphore,
+    sem: synchronize.Semaphore,
     cuda_id=None,
 ) -> Tuple[Optional[Segmenter], Tokenizer]:
     url = urllib.parse.unquote(json_doc.get("url", ""))
@@ -666,7 +666,7 @@ def is_valid(text: str) -> bool:
 
 
 def _process_paths(
-    queue: JoinableQueue, worker_id: int, outdir: str, sem: Semaphore
+    queue: JoinableQueue, worker_id: int, outdir: str, sem: synchronize.Semaphore
 ) -> None:
     print(f"Starting worker {worker_id}")
     # Segmenters and tokenizers get setup based on language in extract_document
@@ -692,7 +692,7 @@ def _process_jsondocs(
     queue: JoinableQueue,
     worker_id: int,
     outdir: str,
-    sem: Semaphore
+    sem: synchronize.Semaphore
     # tokenizers: Dict[str, Tokenizer],
 ) -> None:
     print(f"Starting worker {worker_id}")

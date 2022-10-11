@@ -13,7 +13,12 @@ import torch
 import parsivar
 from amseg import AmharicSegmenter
 from attr import attrs
-from ersatz.candidates import MultilingualPunctuation, Split, PunctuationSpace
+from ersatz.candidates import (
+    MultilingualPunctuation,
+    Split,
+    PunctuationSpace,
+    AdditionalMultilingualPunctuation,
+)
 from ersatz.split import EvalModel
 from ersatz.utils import get_model_path
 
@@ -410,6 +415,8 @@ class ErsatzSegmenter(Segmenter):
         # Use model to split sentences
         if iso == "eng":
             candidates = PunctuationSpace()
+        elif iso == "ben":
+            candidates = AdditionalMultilingualPunctuation()
         else:
             candidates = MultilingualPunctuation()
         if torch.cuda.is_available():
