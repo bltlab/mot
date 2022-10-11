@@ -213,13 +213,14 @@ class UTokenizer(BaseTokenizer):
     https://github.com/uhermjakob/utoken
     Tested on ben, kat, pus, som, swh. Likely can handle others decently, but not tested.
     """
+
     def __init__(self, lang=None):
         super().__init__()
         self.language = lang
         self.tokenizer = utokenize.Tokenizer(lang_code=lang)
 
     def tokenize(self, text: str) -> List[str]:
-        return self.tokenizer.utokenize_string(text).split(' ')
+        return self.tokenizer.utokenize_string(text).split(" ")
 
 
 class TibetanTokenizer(BaseTokenizer):
@@ -239,6 +240,7 @@ class TibetanTokenizer(BaseTokenizer):
     @staticmethod
     def load_botok_tokenizer() -> Callable:
         from botok import WordTokenizer as BodTokenizer
+
         return BodTokenizer
 
 

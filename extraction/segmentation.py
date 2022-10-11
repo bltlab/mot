@@ -13,7 +13,12 @@ import torch
 import parsivar
 from amseg import AmharicSegmenter
 from attr import attrs
-from ersatz.candidates import MultilingualPunctuation, Split, PunctuationSpace, AdditionalMultilingualPunctuation
+from ersatz.candidates import (
+    MultilingualPunctuation,
+    Split,
+    PunctuationSpace,
+    AdditionalMultilingualPunctuation,
+)
 from ersatz.split import EvalModel
 from ersatz.utils import get_model_path
 
