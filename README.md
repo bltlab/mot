@@ -25,7 +25,7 @@ The latest version of the MOT data can always be found at
 
 ## Languages
 
-The current release contains 44 languages: Albanian (sqi), Amharic (amh), Armenian (hye), Azerbaijani (aze), Bambara (bam), Bangla (ben), Bosnian (bos), Burmese (mya), Cantonese (yue), Dari (prs), English (eng), French (fra), Georgian (kat), Greek (ell), Haitian Creole (hat), Hausa (hau), Indonesian (ind), Khmer (khm), Kinyarwanda (kin), Korean (kor), Kurdish (kur), Lao (lao), Lingala (lin), Macedonian (mkd), Mandarin (cmn), Northern (nde), Oromo (orm), Pashto (pus), Persian (fas), Portuguese (por), Russian (rus), Serbian (srp), Shona (sna), Somali (som), Spanish (spa), Swahili (swh), Thai (tha), Tibetan (bod), Tigrinya (tir), Turkish (tur), Ukranian (ukr), Urdu (urd), Uzbek (uzb), and Vietnamese (vie).
+The current release contains 43 languages: Albanian (sqi), Amharic (amh), Armenian (hye), Azerbaijani (aze), Bambara (bam), Bangla (ben), Bosnian (bos), Burmese (mya), Dari (prs), English (eng), French (fra), Georgian (kat), Greek (ell), Haitian Creole (hat), Hausa (hau), Indonesian (ind), Khmer (khm), Kinyarwanda (kin), Korean (kor), Kurdish (kur), Lao (lao), Lingala (lin), Macedonian (mkd), Mandarin (cmn), Northern (nde), Oromo (orm), Pashto (pus), Persian (fas), Portuguese (por), Russian (rus), Serbian (srp), Shona (sna), Somali (som), Spanish (spa), Swahili (swh), Thai (tha), Tibetan (bod), Tigrinya (tir), Turkish (tur), Ukranian (ukr), Urdu (urd), Uzbek (uzb), and Vietnamese (vie).
 
 
 ## Release Layout
@@ -48,56 +48,9 @@ Both of the download scripts place compressed files (one per site) in the `relea
 
 ## Sentence Segmentation and Tokenization
 
-Each JSON document in the release has `paragraphs` and `n_paragraphs` fields. These contain the text of each website divided by paragraphs and the number of paragraphs, respectively.  For the languages where we provide sentence segmentation and  tokenization, the fields `sentences`, `n_sentences`, `tokens`, and `n_tokens` are also provided.
-
-We currently provide both sentence segmentation and tokenization in the following languages (by ISO 639-3 code):
-amh,
-cmn,
-ell,
-eng,
-fas,
-fra,
-hye,
-ind,
-khm,
-kor,
-lao,
-mya,
-por,
-prs,
-rus,
-spa,
-srp,
-tha,
-tir,
-tur,
-ukr,
-urd,
-vie, and
-yue.
-
-We provide sentence segmentation but not tokenization for the following languages:
-aze,
-bos,
-hat,
-hau,
-kin,
-lin,
-mkd,
-nde,
-orm,
-pus,
-sna,
-som,
-sqi,
-swh, and
-uzb.
-
-We currently do not support sentence segmentation or tokenization for the following languages (but we're working on it):
-ben,
-bod,
-kat, and
-kur.
+Each JSON document in the release has `paragraphs` and `n_paragraphs` fields. These contain the text of each website divided by paragraphs and the number of paragraphs, respectively.
+We provide sentence segmentation and tokenization for all languages in MOT,
+which can be accessed with the fields `sentences`, `n_sentences`, `tokens`, and `n_tokens`.
 
 # Working with the Data
 
