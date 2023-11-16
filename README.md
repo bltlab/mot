@@ -240,7 +240,7 @@ In the event that the extraction script hangs, this is likely caused by one proc
 crashing.
 Run with printing redirected to a log and search the log to see what went wrong.
 The rest of the processes will likely finish the rest of the work,
-but you may use a handful of documents unless the error is fixed.
+but you may lose a handful of documents unless the error is fixed.
 
 
 ## One-off Scripts 
