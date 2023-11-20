@@ -333,7 +333,10 @@ async def scrape_page(
         date_published = ld_json.get("datePublished")
         date_modified = ld_json.get("dateModified")
         if date_published:
-            date_published = datetime.fromisoformat(date_published)
+            try:
+                date_published = datetime.fromisoformat(date_published)
+            except ValueError:
+                date_published = datetime.strptime(date_published, "%Y-%m-%d %H:%M:%SZ")
         if not date_published:
             utag_date = get_publication_date_from_utag(utag_data)
             if utag_date:
