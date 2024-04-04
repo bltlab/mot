@@ -661,6 +661,8 @@ def is_valid(text: str) -> bool:
         return False
     elif text.startswith("Clique na barra sobre este texto"):
         return False
+    elif text.startswith("<!-- IMAGE -->"):
+        return False
     else:
         return True
 
