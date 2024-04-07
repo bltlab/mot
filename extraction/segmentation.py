@@ -383,12 +383,17 @@ class ErsatzSegmenter(Segmenter):
     """
 
     def __init__(
-        self, iso: str = "xx", cuda_id: Optional[int] = None, use_gpu: bool = False
+        self,
+        iso: str = "xx",
+        cuda_id: Optional[int] = None,
+        use_gpu: bool = False
     ):
         super().__init__()
         self.language = iso
         self.ersatz_model: ErsatzModel = ErsatzSegmenter.setup_ersatz(
-            iso, cuda_id, use_gpu=use_gpu
+            iso,
+            cuda_id,
+            use_gpu=use_gpu
         )
 
     def segment(self, text: str) -> List[str]:
@@ -405,7 +410,9 @@ class ErsatzSegmenter(Segmenter):
 
     @staticmethod
     def setup_ersatz(
-        iso: str, cuda_id: Optional[int] = None, use_gpu=False
+        iso: str,
+        cuda_id: Optional[int] = None,
+        use_gpu=False
     ) -> ErsatzModel:
         # Load model manually
         # Use model to split sentences
