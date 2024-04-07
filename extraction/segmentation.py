@@ -386,12 +386,14 @@ class ErsatzSegmenter(Segmenter):
         self,
         iso: str = "xx",
         cuda_id: Optional[int] = None,
+        use_gpu: bool = False
     ):
         super().__init__()
         self.language = iso
         self.ersatz_model: ErsatzModel = ErsatzSegmenter.setup_ersatz(
             iso,
             cuda_id,
+            use_gpu=use_gpu
         )
 
     def segment(self, text: str) -> List[str]:
@@ -410,6 +412,7 @@ class ErsatzSegmenter(Segmenter):
     def setup_ersatz(
         iso: str,
         cuda_id: Optional[int] = None,
+        use_gpu=False
     ) -> ErsatzModel:
         # Load model manually
         # Use model to split sentences
@@ -419,11 +422,14 @@ class ErsatzSegmenter(Segmenter):
             candidates = AdditionalMultilingualPunctuation()
         else:
             candidates = MultilingualPunctuation()
-        if torch.cuda.is_available():
-            if cuda_id:
-                device = torch.device(f"cuda:{cuda_id}")
+        if use_gpu:
+            if torch.cuda.is_available():
+                if cuda_id:
+                    device = torch.device(f"cuda:{cuda_id}")
+                else:
+                    device = torch.device("cuda")
             else:
-                device = torch.device("cuda")
+                device = torch.device("cpu")
         else:
             device = torch.device("cpu")
 
@@ -457,6 +463,7 @@ class ErsatzSegmenter(Segmenter):
 def setup_segmenter(
     iso: str = "xx",
     cuda_id: Optional[int] = None,
+    use_gpu: bool = False,
 ) -> Segmenter:
     """Setup segmenters. Use cuda id to setup ersatz models on multiple gpus if applicable."""
     if iso == "tir":
@@ -498,9 +505,9 @@ def setup_segmenter(
     elif iso in {"lin", "nde", "sna", "som"}:
         return NaiveRomanSegmenter(iso)
     elif iso in CUSTOM_ERSATZ_MODELS:
-        return ErsatzSegmenter(iso)
+        return ErsatzSegmenter(iso, use_gpu=use_gpu)
     else:
-        return ErsatzSegmenter(iso, cuda_id)
+        return ErsatzSegmenter(iso, cuda_id, use_gpu=use_gpu)
 
 
 if __name__ == "__main__":
