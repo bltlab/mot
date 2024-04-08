@@ -259,7 +259,7 @@ class StanzaSegmenter(Segmenter):
     @staticmethod
     def load_model(stanza_lang: str):
         stanza.download(stanza_lang, processors="tokenize")
-        return stanza.Pipeline(stanza_lang, processors="tokenize")
+        return stanza.Pipeline(stanza_lang, processors="tokenize", use_gpu=False)
 
     @staticmethod
     def setup_stanza(lang: str):
