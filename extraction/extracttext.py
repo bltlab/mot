@@ -603,7 +603,14 @@ def extract_text(soup, iso) -> List[str]:
             text.extend(text_article)
     # Remove IMAGE, removing here since valid can throw out entire paragraphs
     # Appears that this also occurs in middle of paragraphs
-    text = [re.sub(r"<!-- IMAGE -->", "", t) for t in text]
+    text = [
+        re.sub(
+            r"(<!-- IMAGE -->)|(<!--IMAGE -->)|(<!-- IMAGE-->)|(<-- IMAGE -->)|(!--IMAGE-LEFT-->)|(<!--IMAGE--)|(<!--IMAGE-LEFT-->)|(<!--IMAGE-->)",
+            "",
+            t,
+        )
+        for t in text
+    ]
     return text
 
 
