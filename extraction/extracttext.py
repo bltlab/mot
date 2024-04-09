@@ -4,6 +4,7 @@ Script to extract text from json dumped scrapes from scrapes mongodb.
 """
 import os
 import json
+import re
 import time
 import urllib.parse
 from multiprocessing import Semaphore, synchronize
@@ -217,6 +218,7 @@ def extract_document(
     tokenizer: Optional[Tokenizer],
     sem: synchronize.Semaphore,
     cuda_id=None,
+    use_gpu=False,
 ) -> Tuple[Optional[Segmenter], Tokenizer]:
     url = urllib.parse.unquote(json_doc.get("url", ""))
     modified_url = (
@@ -309,7 +311,8 @@ def extract_document(
             segmenter is None or segmenter.language != iso
         ):
             with sem:
-                segmenter = setup_segmenter(iso, cuda_id)
+                # Generally don't want to use GPU for segmentation (often crashes)
+                segmenter = setup_segmenter(iso, cuda_id, use_gpu=use_gpu)
         elif iso not in SEGMENTABLE_LANGUAGES:
             segmenter = None
         # segmenter = segmenters[iso] if iso in segmenters else segmenters["xx"]
@@ -598,6 +601,16 @@ def extract_text(soup, iso) -> List[str]:
                 paragraph for s in split_p if is_valid(paragraph := s.strip())
             ]
             text.extend(text_article)
+    # Remove IMAGE, removing here since valid can throw out entire paragraphs
+    # Appears that this also occurs in middle of paragraphs
+    text = [
+        re.sub(
+            r"(<!-- IMAGE -->)|(<!--IMAGE -->)|(<!-- IMAGE-->)|(<-- IMAGE -->)|(!--IMAGE-LEFT-->)|(<!--IMAGE--)|(<!--IMAGE-LEFT-->)|(<!--IMAGE-->)",
+            "",
+            t,
+        )
+        for t in text
+    ]
     return text
 
 

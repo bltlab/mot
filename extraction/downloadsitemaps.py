@@ -127,7 +127,11 @@ def find_sitemaps(domains: List[Domain]) -> Generator[Sitemap, None, None]:
             except Exception as e:
                 print(e, appended_url)
 
-            sitemap_tree = etree.XML(weburl.read())
+            weburl_content = weburl.read()
+            if not weburl or not weburl_content:
+                print(f"Warning appended_url: {appended_url} has no content to parse")
+                continue
+            sitemap_tree = etree.XML(weburl_content)
             objectify.deannotate(sitemap_tree, cleanup_namespaces=True)
             # Find the url and the timestamp
             for sitemap in sitemap_tree:
