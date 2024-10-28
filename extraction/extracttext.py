@@ -814,8 +814,8 @@ def fromdb(
     for worker in workers:
         worker.daemon = True
         worker.start()
-
-    languages = languages if languages else languages_from_filemap(filemap)
+    # Add greek if getting language list from filemap since was intended to cover all languages
+    languages = languages if languages else languages_from_filemap(filemap, force_greek=True)
     date_query = create_date_query(start_date, end_date)
     enqueue_json_docs(
         queue,

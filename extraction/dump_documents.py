@@ -166,10 +166,14 @@ def enqueue_json_docs(
         )
 
 
-def languages_from_filemap(filemap: str) -> Tuple[str, ...]:
+def languages_from_filemap(filemap: str, force_greek: bool = True) -> Tuple[str, ...]:
     print("Reading filemap...")
     filemapdict = read_filemap(filemap)
-    return tuple(sorted(set(filemapdict)))
+    languages = sorted(set(filemapdict))
+    # XXX: Hack since greek is discontinued in filemaps / sitemaps
+    if force_greek:
+        languages.append("ell")
+    return tuple(languages)
 
 
 def create_date_query(
